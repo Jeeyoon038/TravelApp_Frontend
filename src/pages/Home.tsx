@@ -4,11 +4,11 @@ import {
   Image,
   Text
 } from "@chakra-ui/react";
-import { UIEvent, useEffect, useRef, useState } from "react";
+import { UIEvent, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import BottomTabBar from "../components/BottomTabBar";
 import GroupDetail from "../components/GroupDetail";
-import LoginModal from "../components/LoginModal";
+// import LoginModal from "../components/LoginModal"; // Commented out since we're assuming the user is logged in
 import MyGroupStoryScroll from "../components/MyGroupStoryScroll";
 import { Group } from "../types/group";
 
@@ -17,7 +17,7 @@ const mockGroups: Group[] = [
     id: 1,
     name: "친구들과의 제주도 여행",
     nickname: "제주 불주먹",
-    coverImage: "/images/image1.jpg",
+    coverImage: "/images/image3.jpg",
     members: ["profile1.jpg", "profile2.jpg", "profile3.jpg"],
     places: ["제주도", "우도", "성산일출봉"],
     dates: ["2024-10-12 ~ 2024-10-15"],
@@ -40,8 +40,6 @@ const mockGroups: Group[] = [
       "/images/image2.jpg",
       "/images/image3.jpg",
       "/images/image4.jpg",
-      
-      
     ],
   },
   {
@@ -71,7 +69,6 @@ const mockGroups: Group[] = [
       "/images/image2.jpg",
       "/images/image3.jpg",
       "/images/image4.jpg",
-      
     ],
   },
   {
@@ -101,7 +98,6 @@ const mockGroups: Group[] = [
       "/images/image2.jpg",
       "/images/image3.jpg",
       "/images/image4.jpg",
-      
     ],
   },
   {
@@ -131,8 +127,6 @@ const mockGroups: Group[] = [
       "/images/image2.jpg",
       "/images/image3.jpg",
       "/images/image4.jpg",
-      
-      
     ],
   },
   {
@@ -164,13 +158,19 @@ const mockGroups: Group[] = [
       "/images/image4.jpg",
     ],
   },
-
-
 ];
 
 export default function Home() {
   const [selectedGroup, setSelectedGroup] = useState<Group>(mockGroups[0]);
-  const [user, setUser] = useState<any>(null);
+  
+  // Initialize user with a mock logged-in user
+  const [user, setUser] = useState<any>({
+    access_token: "mock_token_12345",
+    email: "johndoe@example.com",
+    name: "여행의신",
+    profilePicture: "/images/default-profile.jpg", // Ensure this image exists in your public/images directory
+  });
+
   const [scrollTop, setScrollTop] = useState(0);
   const [showCollapsedHeader, setShowCollapsedHeader] = useState(false);
 
@@ -178,6 +178,8 @@ export default function Home() {
   const navigate = useNavigate();
   const bigHeaderRef = useRef<HTMLDivElement>(null);
 
+  // Commented out the login-related useEffect hooks
+  /*
   // Load user from localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token");
@@ -221,11 +223,12 @@ export default function Home() {
       }
     }
   }, [location.search]);
+  */
 
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
     setScrollTop(newScrollTop);
-    setShowCollapsedHeader(newScrollTop > 250);
+    setShowCollapsedHeader(newScrollTop > 300);
   };
 
   // Updated handleSelectGroup function
@@ -235,7 +238,7 @@ export default function Home() {
 
   return (
     <Flex direction="column" h="100vh" bg="#F2F2F2">
-      <LoginModal setUser={setUser} />
+      {/* <LoginModal setUser={setUser} />  */}
 
       <Box
         flex="1"
@@ -247,8 +250,21 @@ export default function Home() {
           "scrollbar-width": "none",
         }}
       >
-        <Box ref={bigHeaderRef} bg="white" pb={4}>
-          <Flex alignItems="center" ml={5} pt={6} pb={2}>
+        {/* -------------------------------
+            1) 헤더와 안내문구 블럭
+        -------------------------------- */}
+        <Box
+          bg="white"
+          boxShadow="md"
+          borderTopRadius={0}
+          borderBottomRadius={10}
+          p={4}
+          
+        >
+          <Text fontWeight="bold" fontSize="2xl" mb={3}>
+            My Travel Log
+          </Text>
+          <Flex alignItems="center">
             {user && (
               <Image
                 src={user.profilePicture || "/images/default-profile.jpg"}
@@ -259,37 +275,59 @@ export default function Home() {
                 mr={4}
               />
             )}
-            <Text fontWeight="bold" fontSize={30}>
-              {user ? user.name : "My Travel Log"}
+            <Text fontWeight={500} fontSize="sm">
+              {user
+                ? "여행을 함께 할 새로운 그룹을 생성하세요."
+                : "로그인 해주세요."}
             </Text>
           </Flex>
-          
-          <Box
-            bg="white"
-            boxShadow="md"
-            pt={4}
-            pb={4}
-            mb={2}
-            style={{
-              transition: "all 0.3s ease",
-              transform: showCollapsedHeader ? "scale(0.9)" : "scale(1)",
-              opacity: showCollapsedHeader ? 0.8 : 1,
-            }}
-          >
-            <MyGroupStoryScroll
-              groups={mockGroups}
-              selectedGroupId={selectedGroup.id}
-              onSelectGroup={handleSelectGroup}
-            />
-          </Box>
         </Box>
 
-        <GroupDetail group={selectedGroup} isHeaderCollapsed={showCollapsedHeader} />
+        {/* -------------------------------
+            2) MyGroupStoryScroll 블럭
+        -------------------------------- */}
+        <Box
+          bg="white"
+          boxShadow="md"
+          borderRadius={10}
+          mt={2}
+          mb={2}
+          p={3}
+          pr={-3}
+          // Collapsed 시 스케일 효과 + 투명도
+          style={{
+            transition: "all 0.3s ease",
+            transform: showCollapsedHeader ? "scale(0.95)" : "scale(1)",
+            opacity: showCollapsedHeader ? 0.9 : 1,
+          }}
+        >
+          <MyGroupStoryScroll
+            groups={mockGroups}
+            selectedGroupId={selectedGroup.id}
+            onSelectGroup={handleSelectGroup}
+          />
+        </Box>
+
+        {/* -------------------------------
+            3) GroupDetail 블럭
+        -------------------------------- */}
+        <Box
+          bg="white"
+          boxShadow="md"
+          borderRadius="lg"
+        >
+          <GroupDetail
+            group={selectedGroup}
+            isHeaderCollapsed={showCollapsedHeader}
+          />
+        </Box>
       </Box>
 
+      {/* 하단 탭바 (고정) */}
       <Box position="sticky" bottom="0" zIndex="10">
         <BottomTabBar />
       </Box>
     </Flex>
   );
+
 }
