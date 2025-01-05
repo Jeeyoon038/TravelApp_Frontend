@@ -1,14 +1,24 @@
+import React, { useState, UIEvent, useRef } from "react";
 import {
   Box,
+  Button,
   Flex,
+  FormControl,
+  FormLabel,
   Image,
-  Text
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Text,
+  useDisclosure
 } from "@chakra-ui/react";
-import { UIEvent, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import BottomTabBar from "../components/BottomTabBar";
 import GroupDetail from "../components/GroupDetail";
-// import LoginModal from "../components/LoginModal"; // Commented out since we're assuming the user is logged in
 import MyGroupStoryScroll from "../components/MyGroupStoryScroll";
 import { Group } from "../types/group";
 
@@ -168,8 +178,36 @@ export default function Home() {
     access_token: "mock_token_12345",
     email: "johndoe@example.com",
     name: "여행의신",
-    profilePicture: "/images/default-profile.jpg", // Ensure this image exists in your public/images directory
+    profilePicture: "/images/default-profile.jpg",
   });
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [newTrip, setNewTrip] = useState({
+    title: "",
+    start_date: "",
+    end_date: "",
+  });
+
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const imageUrls: string[] = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+  
+      const response = await fetch("http://localhost:3000/upload/image", {
+        method: "POST",
+        body: formData,
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        imageUrls.push(data.imageUrl);
+      } else {
+        console.error("Image upload failed:", file.name);
+      }
+    }
+    return imageUrls;
+  };
 
   const [scrollTop, setScrollTop] = useState(0);
   const [showCollapsedHeader, setShowCollapsedHeader] = useState(false);
@@ -177,53 +215,7 @@ export default function Home() {
   const location = useLocation();
   const navigate = useNavigate();
   const bigHeaderRef = useRef<HTMLDivElement>(null);
-
-  // Commented out the login-related useEffect hooks
-  /*
-  // Load user from localStorage
-  useEffect(() => {
-    const storedToken = localStorage.getItem("access_token");
-    const storedEmail = localStorage.getItem("user_email");
-    const storedName = localStorage.getItem("user_name");
-    const storedProfilePicture = localStorage.getItem("user_profile_picture");
-
-    if (storedToken && storedEmail && storedName) {
-      setUser({
-        access_token: storedToken,
-        email: storedEmail,
-        name: storedName,
-        profilePicture: storedProfilePicture,
-      });
-    }
-  }, []);
-
-  // Get user info from URL parameters
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const accessToken = params.get("access_token");
-    const email = params.get("email");
-    const name = params.get("name");
-    const profilePicture = params.get("profile_picture");
-
-    console.log('Received User Info:', { email, name, profilePicture });
-
-    if (accessToken && email && name) {
-      setUser({
-        access_token: accessToken,
-        email,
-        name,
-        profilePicture,
-      });
-
-      localStorage.setItem("access_token", accessToken);
-      localStorage.setItem("user_email", email);
-      localStorage.setItem("user_name", name);
-      if (profilePicture) {
-        localStorage.setItem("user_profile_picture", profilePicture);
-      }
-    }
-  }, [location.search]);
-  */
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
@@ -231,15 +223,53 @@ export default function Home() {
     setShowCollapsedHeader(newScrollTop > 300);
   };
 
-  // Updated handleSelectGroup function
   function handleSelectGroup(group: Group): void {
     setSelectedGroup(group);
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewTrip(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleCreateTrip = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const imageUrls = await uploadImages(selectedFiles);
+
+      const response = await fetch('http://localhost:3000/trips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newTrip.title,
+          start_date: new Date(newTrip.start_date).toISOString(),
+          end_date: new Date(newTrip.end_date).toISOString(),  
+          image_urls: imageUrls,
+          member_google_ids: []
+        }),
+      });
+  
+      if (response.ok) {
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error creating trip:', error);
+    }
+  };
+
   return (
     <Flex direction="column" h="100vh" bg="#F2F2F2">
-      {/* <LoginModal setUser={setUser} />  */}
-
       <Box
         flex="1"
         overflowY="auto"
@@ -250,20 +280,17 @@ export default function Home() {
           "scrollbar-width": "none",
         }}
       >
-        {/* -------------------------------
-            1) 헤더와 안내문구 블럭
-        -------------------------------- */}
         <Box
           bg="white"
           boxShadow="md"
           borderTopRadius={0}
           borderBottomRadius={10}
           p={4}
-          
         >
           <Text fontWeight="bold" fontSize="2xl" mb={3}>
             My Travel Log
           </Text>
+          
           <Flex alignItems="center">
             {user && (
               <Image
@@ -275,17 +302,30 @@ export default function Home() {
                 mr={4}
               />
             )}
-            <Text fontWeight={500} fontSize="sm">
+            <Text fontWeight={500} fontSize="sm" mr={2}>
               {user
                 ? "여행을 함께 할 새로운 그룹을 생성하세요."
                 : "로그인 해주세요."}
             </Text>
+            <Button
+              size="sm"
+              bg="white"
+              color="blue.500"
+              border="1px"
+              borderColor="blue.500"
+              borderRadius="md"
+              _hover={{
+                bg: "blue.50",
+                color: "blue.600"
+              }}
+              boxShadow="sm"
+              onClick={onOpen}
+            >
+              + New Trip
+            </Button>
           </Flex>
         </Box>
 
-        {/* -------------------------------
-            2) MyGroupStoryScroll 블럭
-        -------------------------------- */}
         <Box
           bg="white"
           boxShadow="md"
@@ -294,7 +334,6 @@ export default function Home() {
           mb={2}
           p={3}
           pr={-3}
-          // Collapsed 시 스케일 효과 + 투명도
           style={{
             transition: "all 0.3s ease",
             transform: showCollapsedHeader ? "scale(0.95)" : "scale(1)",
@@ -308,9 +347,6 @@ export default function Home() {
           />
         </Box>
 
-        {/* -------------------------------
-            3) GroupDetail 블럭
-        -------------------------------- */}
         <Box
           bg="white"
           boxShadow="md"
@@ -323,11 +359,66 @@ export default function Home() {
         </Box>
       </Box>
 
-      {/* 하단 탭바 (고정) */}
       <Box position="sticky" bottom="0" zIndex="10">
         <BottomTabBar />
       </Box>
+
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Create New Trip</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <form onSubmit={handleCreateTrip}>
+              <FormControl mb={4}>
+                <FormLabel>Trip Title</FormLabel>
+                <Input
+                  name="title"
+                  placeholder="Enter trip title"
+                  value={newTrip.title}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormControl>
+              <FormControl mb={4}>
+                <FormLabel>Images</FormLabel>
+                <Input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </FormControl>
+              <FormControl mb={4}>
+                <FormLabel>Start Date</FormLabel>
+                <Input
+                  name="start_date"
+                  type="date"
+                  value={newTrip.start_date}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormControl>
+
+              <FormControl mb={4}>
+                <FormLabel>End Date</FormLabel>
+                <Input
+                  name="end_date"
+                  type="date"
+                  value={newTrip.end_date}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormControl>
+
+              <Button colorScheme="blue" mr={3} type="submit">
+                Create Trip
+              </Button>
+              <Button onClick={onClose}>Cancel</Button>
+            </form>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
-
 }
