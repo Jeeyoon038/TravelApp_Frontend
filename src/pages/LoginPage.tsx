@@ -12,23 +12,23 @@ export default function LoginPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get("access_token");
     const email = urlParams.get("email");
-    const name = urlParams.get("name");
+    const displayName = urlParams.get("name");
     const profilePicture = urlParams.get("profile_picture");
 
     console.log('Login Page - Received Parameters:', {
       accessToken,
       email,
-      name,
+      displayName,
       profilePicture
     });
 
     // Ensure all required parameters are present
-    if (accessToken && email && name) {
+    if (accessToken && email && displayName) {
       try {
         // Save user info to localStorage
         localStorage.setItem("access_token", accessToken);
         localStorage.setItem("user_email", email);
-        localStorage.setItem("user_name", name);
+        localStorage.setItem("user_name", displayName);
         if (profilePicture) {
           localStorage.setItem("user_profile_picture", profilePicture);
         }
@@ -51,7 +51,7 @@ export default function LoginPage() {
             user: {
               access_token: accessToken,
               email,
-              name,
+              displayName,
               profilePicture
             }
           }
