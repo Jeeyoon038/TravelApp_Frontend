@@ -1,16 +1,14 @@
-import { Box, Flex, Image as ChakraImage, Heading, Text } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { GoogleMap, Marker } from "@react-google-maps/api";
-import { getPhotoMetadata } from "../utils/getPhotoMetadata"; // Assuming this function is imported correctly
+// components/PostCard.tsx
+
+import { Box, Image as ChakraImage, Flex, Text } from "@chakra-ui/react";
+import { motion } from "framer-motion";
+import { FC, useEffect, useState } from "react";
+import { getPhotoMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
+import MapComponent from "./MapComponent";
 
 interface Coordinates {
   lat: number;
   lng: number;
-}
-
-interface MapComponentProps {
-  location: string;
-  coordinates: Coordinates;
 }
 
 interface PostCardProps {
@@ -18,129 +16,105 @@ interface PostCardProps {
   username: string;
   location: string;
   images: string[];
-  coordinates?: Coordinates;
+  onClick: () => void; // 클릭 이벤트 핸들러
 }
 
-const MapComponent = ({ location, coordinates }: MapComponentProps) => {
-  const mapStyles = {
-    height: "100%",
-    width: "100%",
-    position: "relative" as const
-  };
+const MotionBox = motion(Box);
 
-  const defaultCenter = {
-    lat: 37.5665,
-    lng: 126.9780
-  };
-
-  const isValidCoordinates = coordinates && !isNaN(coordinates.lat) && !isNaN(coordinates.lng);
-
-  return (
-    <Box height="100%" width="100%">
-      <GoogleMap
-        mapContainerStyle={mapStyles}
-        zoom={13}
-        center={isValidCoordinates ? coordinates : defaultCenter}
-        options={{
-          fullscreenControl: false,
-          streetViewControl: false
-        }}
-      >
-        {isValidCoordinates && <Marker position={coordinates} />}
-      </GoogleMap>
-    </Box>
-  );
-};
-
-export default function PostCard({
-  profileImage,
-  username,
-  location,
-  images,
-}: PostCardProps) {
-  const [imageCoordinates, setImageCoordinates] = useState<Coordinates | null>(null);
+const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images, onClick }) => {
+  const [imageMetadata, setImageMetadata] = useState<PhotoMetadata>({
+    date: null,
+    latitude: null,
+    longitude: null,
+  });
 
   useEffect(() => {
-    async function loadImageLocation() {
+    async function loadImageMetadata() {
       if (images && images.length > 0) {
-        try {
-          const imagePath = images[0]; // Using the first image in the images array
-          const coordinates = await getPhotoMetadata(imagePath); // Get the metadata from the image
-          console.log('Coordinates from EXIF:', coordinates);  // Debug: Log the coordinates
-
-          // If coordinates are found, update the state
-          if (coordinates && coordinates.latitude && coordinates.longitude) {
-            setImageCoordinates({
-              lat: coordinates.latitude,
-              lng: coordinates.longitude,
-            });
-          } else {
-            // Fallback to default if no coordinates found
-            setImageCoordinates({ lat: 37.5665, lng: 126.9780 });
-          }
-        } catch (error) {
-          console.error('Error loading image location:', error);
-          // Fallback if an error occurs
-          setImageCoordinates({ lat: 37.5665, lng: 126.9780 });
-        }
+        const metadata = await getPhotoMetadata(images[0]); // 첫 번째 이미지의 메타데이터 사용
+        setImageMetadata(metadata);
       }
     }
 
-    loadImageLocation();
-  }, [images]);  // Ensure to re-run this effect if the `images` array changes
+    loadImageMetadata();
+  }, [images]);
+
+  const coordinates: Coordinates | undefined =
+    imageMetadata.latitude && imageMetadata.longitude
+      ? { lat: imageMetadata.latitude, lng: imageMetadata.longitude }
+      : undefined;
 
   return (
-    <Box height="60vh" display="flex" flexDirection="column">
-      <Flex alignItems="center" p={4} gap={4} bg="white">
-        <ChakraImage src={profileImage} alt={username} boxSize="50px" borderRadius="full" />
+    <MotionBox
+      bg="white"
+      borderRadius="lg"
+      boxShadow="md"
+      p={4}
+      cursor="pointer"
+      whileHover={{ scale: 1.02, boxShadow: "lg" }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick} // 클릭 시 부모에게 전달
+    >
+      {/* 프로필 및 위치 */}
+      <Flex alignItems="center" mb={4}>
+        <ChakraImage src={profileImage} alt={username} boxSize="50px" borderRadius="full" mr={3} />
         <Box>
-          <Heading size="sm">{username}</Heading>
+          <Text fontWeight="bold">{username}</Text>
           <Text fontSize="sm" color="gray.500">{location}</Text>
         </Box>
       </Flex>
 
-      <Box height="200px" overflow="hidden" position="relative">
-        {imageCoordinates ? (
-          <MapComponent location={location} coordinates={imageCoordinates} />
+      {/* 지도 (비활성화) */}
+      <Box mb={4} height="200px">
+        {coordinates ? (
+          <MapComponent location={location} coordinates={coordinates} isInteractive={false} />
         ) : (
           <ChakraImage
-            src="/images/dummy_map_image.jpg" // Dummy fallback image
+            src="/images/dummy_map_image.jpg" // 대체 지도 이미지
             alt="Dummy Map"
             objectFit="cover"
             w="100%"
             h="100%"
+            borderRadius="md"
           />
         )}
       </Box>
 
-      {/* Below scrollable images */}
+      {/* 사진들 - 가로 스크롤 */}
       <Box
-        height="300px"
+        height="150px"
         display="flex"
         overflowX="auto"
         p={0}
-        style={{
+        css={{
           scrollSnapType: "x mandatory",
           WebkitOverflowScrolling: "touch",
+          '&::-webkit-scrollbar': { display: 'none' },
         }}
       >
         {images.map((image, index) => (
           <Box
             key={index}
-            flex="0 0 50%"
+            flex="0 0 auto"
+            width="150px"
             height="100%"
+            mr={2}
+            borderRadius="md"
             overflow="hidden"
+            scrollSnapAlign="start"
           >
             <ChakraImage
               src={image}
               alt={`Scrollable Image ${index + 1}`}
               objectFit="cover"
-              w="100%"
-              h="100%"
+              width="100%"
+              height="100%"
             />
           </Box>
         ))}
       </Box>
-    </Box>
+    </MotionBox>
   );
-}
+};
+
+export default PostCard;
