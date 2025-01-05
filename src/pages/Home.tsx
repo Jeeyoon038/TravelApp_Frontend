@@ -261,7 +261,7 @@ export default function Home() {
           p={4}
           
         >
-          <Text fontWeight="bold" fontSize="2xl" mb={3}>
+          <Text fontWeight="bold" fontSize={24} mb={3}>
             My Travel Log
           </Text>
           <Flex alignItems="center">
