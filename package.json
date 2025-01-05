@@ -19,6 +19,7 @@
     "@google-cloud/vision": "^4.3.2",
     "@react-google-maps/api": "^2.20.5",
     "@react-oauth/google": "^0.12.1",
+    "aws-sdk": "^2.1692.0",
     "axios": "^1.7.9",
     "exif-js": "^2.3.0",
     "exifr": "^7.1.3",
