@@ -471,8 +471,8 @@ export default function Home() {
               ml="60px"
               width="7px"
               variant="ghost"
-              color="gray.500"
-              borderColor="gray.500"
+              color="gray.400"
+              borderColor="gray.300"
               borderRadius="full"
               _hover={{
 
