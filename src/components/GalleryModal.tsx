@@ -1,12 +1,13 @@
 // src/components/GalleryModal.tsx
 
 import { CloseIcon } from "@chakra-ui/icons";
-import { Box, Image as ChakraImage, Flex, Spinner, Text } from "@chakra-ui/react";
+import { Box, Image as ChakraImage, Flex, IconButton, Spinner, Text } from "@chakra-ui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FC, useEffect, useState } from "react";
 import { getPhotoMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
 import { MapComponent } from "./MapComponent";
 
+// 좌표 타입
 interface Coordinates {
   lat: number;
   lng: number;
@@ -38,15 +39,15 @@ const MotionBox = motion(Box);
 // 파스텔 팔레트 + 해시
 const pastelColors = [
   "#f2f2f2",
-  "blue.50",
-  "pink.50",
-  "green.50",
-  "yellow.50",
-  "purple.50",
-  "teal.50",
-  "orange.50",
-  "cyan.50",
-  "red.50",
+  "#ebf8ff", // blue.50
+  "#fff5f7", // pink.50
+  "#f0fff4", // green.50
+  "#fffff0", // yellow.50
+  "#faf5ff", // purple.50
+  "#e6fffa", // teal.50
+  "#fffaf0", // orange.50
+  "#e0f7fa", // cyan.50
+  "#fff5f5", // red.50
 ];
 function hashString(str: string): number {
   let hash = 5381;
@@ -60,7 +61,7 @@ function getPastelColor(key: string): string {
   return pastelColors[index];
 }
 
-// 달 이름
+// 월 이름
 const monthNames = [
   "Jan","Feb","Mar","Apr","May","Jun",
   "Jul","Aug","Sep","Oct","Nov","Dec",
@@ -189,9 +190,15 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
             position="relative"
           >
             {/* 닫기 아이콘 */}
-            <Box position="absolute" top="16px" right="16px" cursor="pointer">
-              <CloseIcon onClick={onClose} />
-            </Box>
+            <IconButton
+              icon={<CloseIcon />}
+              position="absolute"
+              top="16px"
+              right="16px"
+              onClick={onClose}
+              variant="ghost"
+              aria-label="Close Gallery"
+            />
 
             {/* 프로필 */}
             <Flex alignItems="center" mb={6}>
@@ -266,7 +273,7 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
                   const locationColor = getPastelColor(group.locationKey);
 
                   return (
-                    <Box key={groupIndex} mb={8}>
+                    <Box key={groupIndex} mb={2}>
                       {/* 날짜 헤더 */}
                       <Box
                         p={4}
@@ -282,7 +289,7 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
                           </Text>
                         ) : (
                           <>
-                            <Text fontSize="md" color="gray.600">
+                            <Text fontSize="md" color="gray.600" mb={-2}>
                               {monthName} {year}
                             </Text>
                             <Text fontSize="4xl" fontWeight="bold">
@@ -325,18 +332,9 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
                         </Box>
                       )}
 
-                      {/* 사진 목록 */}
-                      <Box>
-                        {group.photos.map((photo, idx) => (
-                          <Box key={idx} mb={4} borderRadius="md" overflow="hidden">
-                            <ChakraImage
-                              src={photo.displaySrc}
-                              alt={`image-${idx}`}
-                              objectFit="cover"
-                              width="100%"
-                            />
-                          </Box>
-                        ))}
+                      {/* 사진 갤러리: 인스타그램 스타일 스와이프 */}
+                      <Box position="relative" mb={4}>
+                        <SwipeableGallery photos={group.photos} />
                       </Box>
                     </Box>
                   );
@@ -351,3 +349,123 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
 };
 
 export default GalleryModal;
+
+// ------------------------------
+// SwipeableGallery 컴포넌트
+// ------------------------------
+
+import { motion as framerMotion } from "framer-motion";
+
+interface SwipeableGalleryProps {
+  photos: ExtendedPhoto[];
+}
+
+const SwipeableGallery: FC<SwipeableGalleryProps> = ({ photos }) => {
+  const [[page, direction], setPage] = useState<[number, number]>([0, 0]);
+
+  const imageIndex = page;
+
+  const paginate = (newDirection: number) => {
+    const newPage = page + newDirection;
+    if (newPage < 0 || newPage >= photos.length) return; // 루프 방지
+    setPage([newPage, newDirection]);
+  };
+
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0,
+      scale: 0.95,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+      scale: 1,
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 300 : -300,
+      opacity: 0,
+      scale: 0.95,
+    }),
+  };
+
+  const swipeConfidenceThreshold = 10000;
+  const swipePower = (offset: number, velocity: number) => {
+    return Math.abs(offset) * velocity;
+  };
+
+  return (
+    <Box width="100%" height="300px" overflow="hidden" position="relative">
+      <AnimatePresence initial={false} custom={direction}>
+        <framerMotion.div
+          key={page}
+          custom={direction}
+          variants={variants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{
+            x: { type: "spring", stiffness: 300, damping: 30 },
+            opacity: { duration: 0.2 },
+            scale: { duration: 0.2 },
+          }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={1}
+          onDragEnd={(e, { offset, velocity }) => {
+            const swipe = swipePower(offset.x, velocity.x);
+
+            if (swipe < -swipeConfidenceThreshold && imageIndex < photos.length - 1) {
+              paginate(1);
+            } else if (swipe > swipeConfidenceThreshold && imageIndex > 0) {
+              paginate(-1);
+            }
+          }}
+          style={{
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <ChakraImage
+            src={photos[imageIndex].displaySrc}
+            alt={`Photo ${imageIndex + 1}`}
+            objectFit="cover"
+            width="100%"
+            height="100%"
+            draggable="false"
+            loading="lazy"
+            fallbackSrc="/images/placeholder.png"
+          />
+        </framerMotion.div>
+      </AnimatePresence>
+
+      {/* 사진 인디케이터 */}
+      {photos.length > 1 && (
+        <Box
+          position="absolute"
+          bottom="10px"
+          left="50%"
+          transform="translateX(-50%)"
+          display="flex"
+          gap={2}
+          zIndex="2" // 인디케이터가 사진 위에 표시되도록 zIndex 설정
+        >
+          {photos.map((_, idx) => (
+            <Box
+              key={idx}
+              width="5px"
+              height="5px"
+              borderRadius="full"
+              bg={idx === imageIndex ? "white" : "gray.300"}
+              boxShadow={idx === imageIndex ? "0 0 4px rgba(0,0,0,0.5)" : "none"}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+};
+

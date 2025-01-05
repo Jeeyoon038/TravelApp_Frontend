@@ -101,7 +101,7 @@ export default function MyGroupStoryScroll({
         <Flex
           direction="row"
           gap={4}
-          px={4}
+          px={7}
           py={2}
           overflowX="scroll"
           bg="white"

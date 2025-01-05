@@ -4,7 +4,7 @@ import { Box, Image as ChakraImage, Flex, Text } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { FC, useEffect, useState } from "react";
 import { getPhotoMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
-import { MapComponent } from "./MapComponent";
+import { MapComponent } from "./MapComponent"; // MapComponent의 기본 내보내기 사용
 
 interface Coordinates {
   lat: number;
@@ -64,11 +64,28 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
         </Box>
       </Flex>
 
+      {/* 지도 (coordinates가 있을 때만 표시) */}
+      {coordinates && (
+        <Box
+          mb={4}
+          width="100%"
+          borderRadius="20px"
+          overflow="hidden" // 지도가 컨테이너를 벗어나지 않도록 설정
+        >
+          <MapComponent
+            location={location}
+            coordinates={coordinates}
+            isInteractive={false}
+            mapHeight="120px" // 원하는 높이로 설정
+          />
+        </Box>
+      )}
+
       {/* 사진들 - 가로 스크롤 */}
       <Box
-        height="150px"
+        height="250px"
         display="flex"
-        mb={5}
+        mt={3}
         overflowX="auto"
         p={0}
         css={{
@@ -84,7 +101,7 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
             width="300px"
             height="100%"
             mr={2}
-            borderRadius="md"
+            borderRadius="20px"
             overflow="hidden"
             scrollSnapAlign="start"
           >
@@ -98,23 +115,6 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
           </Box>
         ))}
       </Box>
-      {/* 지도 (비활성화) */}
-      <Box mb={40} height="200px">
-        {coordinates ? (
-          <MapComponent location={location} coordinates={coordinates} isInteractive={false} />
-        ) : (
-          <ChakraImage
-            src="/images/dummy_map_image.jpg" // 대체 지도 이미지
-            alt="Dummy Map"
-            objectFit="cover"
-            w="100%"
-            h="100%"
-            borderRadius="md"
-          />
-        )}
-      </Box>
-
-      
     </MotionBox>
   );
 };

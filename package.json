@@ -27,9 +27,11 @@
     "piexifjs": "^1.0.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^14.3.5",
     "react-icons": "^5.4.0",
     "react-masonry-css": "^1.0.16",
     "react-router-dom": "^6.28.1",
+    "react-swipeable": "^7.0.2",
     "swiper": "^11.2.0"
   },
   "devDependencies": {

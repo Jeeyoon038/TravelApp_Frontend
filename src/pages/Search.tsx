@@ -274,6 +274,8 @@ export default function Search() {
         )}
       </Box>
 
+      <Box mb={20}></Box>
+      
       <Box>
         <BottomTabBar />
       </Box>
@@ -283,6 +285,7 @@ export default function Search() {
         onClose={handleCloseModal}
         post={selectedPost}
       />
+      
     </Box>
   );
 }
