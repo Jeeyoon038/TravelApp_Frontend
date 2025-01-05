@@ -4,7 +4,7 @@ import { Box, Image as ChakraImage, Flex, Text } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { FC, useEffect, useState } from "react";
 import { getPhotoMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
-import MapComponent from "./MapComponent";
+import { MapComponent } from "./MapComponent";
 
 interface Coordinates {
   lat: number;

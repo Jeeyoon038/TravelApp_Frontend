@@ -26,7 +26,7 @@ export default function Search() {
       profileImage: "/images/image2.jpg",
       username: "jeeyoon38",
       location: "아테네",
-      images: ["/images/image2.jpg", "/images/image3.jpg"],
+      images: ["/images/image2.jpg", "/images/image3.jpg","/images/image2.jpg", "/images/image3.jpg"],
     },
     {
       profileImage: "/images/image2.jpg",
@@ -148,7 +148,7 @@ export default function Search() {
         borderBottomRadius={isHeaderCollapsed ? 0 : 10}
         variants={headerVariants}
         animate={isHeaderCollapsed && !isSearchMode ? "collapsed" : "expanded"}
-        boxShadow={isHeaderCollapsed ? "sm" : "md"}
+        boxShadow={"0px 4px 4px rgba(0, 0, 0, 0.10)"}
         overflow="hidden"
       >
         <Box
@@ -245,8 +245,7 @@ export default function Search() {
       <Box
         flex="1"
         overflowY="auto"
-        pt={4}
-        px={4}
+        pt={2}
         onScroll={handleScroll}
         css={{
           "&::-webkit-scrollbar": { display: "none" },
@@ -255,7 +254,7 @@ export default function Search() {
         }}
       >
         {filteredPosts.length > 0 ? (
-          <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={6}>
+          <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={2}>
             {filteredPosts.map((post, index) => (
               <GridItem key={index}>
                 <PostCard
