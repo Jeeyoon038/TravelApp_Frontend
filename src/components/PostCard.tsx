@@ -64,26 +64,11 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
         </Box>
       </Flex>
 
-      {/* 지도 (비활성화) */}
-      <Box mb={4} height="200px">
-        {coordinates ? (
-          <MapComponent location={location} coordinates={coordinates} isInteractive={false} />
-        ) : (
-          <ChakraImage
-            src="/images/dummy_map_image.jpg" // 대체 지도 이미지
-            alt="Dummy Map"
-            objectFit="cover"
-            w="100%"
-            h="100%"
-            borderRadius="md"
-          />
-        )}
-      </Box>
-
       {/* 사진들 - 가로 스크롤 */}
       <Box
         height="150px"
         display="flex"
+        mb={5}
         overflowX="auto"
         p={0}
         css={{
@@ -96,7 +81,7 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
           <Box
             key={index}
             flex="0 0 auto"
-            width="150px"
+            width="300px"
             height="100%"
             mr={2}
             borderRadius="md"
@@ -113,6 +98,23 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
           </Box>
         ))}
       </Box>
+      {/* 지도 (비활성화) */}
+      <Box mb={40} height="200px">
+        {coordinates ? (
+          <MapComponent location={location} coordinates={coordinates} isInteractive={false} />
+        ) : (
+          <ChakraImage
+            src="/images/dummy_map_image.jpg" // 대체 지도 이미지
+            alt="Dummy Map"
+            objectFit="cover"
+            w="100%"
+            h="100%"
+            borderRadius="md"
+          />
+        )}
+      </Box>
+
+      
     </MotionBox>
   );
 };
