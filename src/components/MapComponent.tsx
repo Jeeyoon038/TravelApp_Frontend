@@ -1,56 +1,57 @@
-// components/MapComponent.tsx
+// src/components/MapComponent.tsx
 
-import { Box } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { GoogleMap, Marker } from "@react-google-maps/api";
-import { FC } from "react";
+import React from "react";
 
+// 좌표 타입
 interface Coordinates {
   lat: number;
   lng: number;
 }
 
 interface MapComponentProps {
-  location: string;
   coordinates: Coordinates;
-  isInteractive: boolean;
+  location: string;  // 지도 하단 텍스트 (optional)
+  isInteractive?: boolean; // 드래그/줌 허용 여부
+  mapHeight?: string;
 }
 
-const MapComponent: FC<MapComponentProps> = ({ location, coordinates, isInteractive }) => {
-  const mapStyles = {
-    height: "100%",
-    width: "100%",
-    position: "relative" as const,
-  };
+const MapComponent: React.FC<MapComponentProps> = ({
+  coordinates,
+  location,
+  isInteractive = true,
+  mapHeight = "300px",
+}) => {
+  const defaultCenter = { lat: 37.5665, lng: 126.9780 };
 
-  const defaultCenter = {
-    lat: 37.5665, // 서울의 위도
-    lng: 126.9780, // 서울의 경도
-  };
-
-  const isValidCoordinates = coordinates && !isNaN(coordinates.lat) && !isNaN(coordinates.lng);
-
-  const mapOptions = {
-    fullscreenControl: false,
-    streetViewControl: false,
-    disableDefaultUI: !isInteractive, // 기본 UI 비활성화 여부
-    draggable: isInteractive, // 드래그 가능 여부
-    scrollwheel: isInteractive, // 스크롤 휠 줌 가능 여부
-    disableDoubleClickZoom: !isInteractive, // 더블 클릭 줌 비활성화 여부
-    gestureHandling: isInteractive ? "auto" : "none", // 제스처 처리
-  };
+  const isValid = coordinates && !isNaN(coordinates.lat) && !isNaN(coordinates.lng);
 
   return (
-    <Box height="100%" width="100%" borderRadius="md" overflow="hidden">
+    <Box w="100%" h={mapHeight} borderRadius="md" overflow="hidden">
       <GoogleMap
-        mapContainerStyle={mapStyles}
+        mapContainerStyle={{ width: "100%", height: "100%" }}
+        center={isValid ? coordinates : defaultCenter}
         zoom={13}
-        center={isValidCoordinates ? coordinates : defaultCenter}
-        options={mapOptions}
+        options={{
+          fullscreenControl: false,
+          streetViewControl: false,
+          mapTypeControl: false,
+          draggable: isInteractive,
+          scrollwheel: isInteractive,
+        }}
       >
-        {isValidCoordinates && <Marker position={coordinates} />}
+        {isValid && <Marker position={coordinates} />}
       </GoogleMap>
+      {/* location 텍스트 */}
+      <Box mt={2}>
+        <Text fontSize="sm" color="gray.500">
+          {location}
+        </Text>
+      </Box>
     </Box>
   );
 };
 
-export default MapComponent;
+export { MapComponent };
+

@@ -287,7 +287,7 @@ export default function Home() {
           borderBottomRadius={10}
           p={4}
         >
-          <Text fontWeight="bold" fontSize="2xl" mb={3}>
+          <Text fontWeight="bold" fontSize={24} mb={3}>
             My Travel Log
           </Text>
           
