@@ -5,10 +5,10 @@ import { useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 import Masonry from "react-masonry-css";
 import { useNavigate } from "react-router-dom";
-import "../styles/masonry.css"; // 기존 Masonry 레이아웃 스타일
+import "../styles/masonry.css"; // Existing Masonry layout styles
 import { Group } from "../types/group";
-import { getPhotoMetadata } from "../utils/getPhotoMetadata"; // 통합된 함수
-import { MapComponent } from "./MapComponent"; // 작은 지도 컴포넌트(아래서도 정의 가능)
+import { getPhotoMetadata } from "../utils/getPhotoMetadata"; // Integrated function
+import { MapComponent } from "./MapComponent"; // Small map component
 
 interface GalleryPhoto {
   originalSrc: string;
@@ -28,7 +28,7 @@ interface GroupGalleryProps {
   isHeaderCollapsed: boolean;
 }
 
-// 그룹화된 섹션
+// Grouped sections
 interface PhotoGroup {
   dateKey: string;
   locationKey: string;
@@ -40,7 +40,7 @@ interface Coordinates {
   lng: number;
 }
 
-// 파스텔 색상 팔레트 + 해시
+// Pastel color palette + hashing
 const pastelColors = [
   '#f2f2f2',
   'blue.50',
@@ -53,6 +53,7 @@ const pastelColors = [
   'cyan.50',
   'red.50',
 ];
+
 function hashString(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
@@ -60,9 +61,29 @@ function hashString(str: string): number {
   }
   return hash;
 }
+
 function getPastelColor(key: string): string {
   const index = Math.abs(hashString(key)) % pastelColors.length;
   return pastelColors[index];
+}
+
+// Helper function to calculate distance between two coordinates in kilometers
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1); 
+  const dLon = deg2rad(lon2 - lon1); 
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    ; 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg: number): number {
+  return deg * (Math.PI / 180);
 }
 
 export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryProps) {
@@ -74,13 +95,13 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  // Google Maps API 로드
+  // Google Maps API load
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
 
-  // 1) 사진 메타데이터 로드
+  // 1) Load photo metadata
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -91,7 +112,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
         const array: GalleryPhoto[] = [];
 
         for (const src of group.image_urls) {
-          // getPhotoMetadata에서 이미 EXIF + HEIC + 역지오코딩 처리
+          // getPhotoMetadata already handles EXIF + HEIC + reverse geocoding
           const meta = await getPhotoMetadata(src);
 
           array.push({
@@ -108,7 +129,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
           });
         }
 
-        // 날짜 오름차순 정렬 (날짜 없으면 뒤로)
+        // Sort by date ascending (photos without dates go to the end)
         array.sort((a, b) => {
           if (a.date && b.date) return a.date.getTime() - b.date.getTime();
           if (a.date) return -1;
@@ -120,7 +141,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
       } catch (err) {
         console.error("Error loading metadata: ", err);
         if (isMounted) {
-          setError("사진 데이터를 불러오는 중 오류가 발생했습니다.");
+          setError("An error occurred while loading photo data.");
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -134,7 +155,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     };
   }, [group.image_urls]);
 
-  // 2) 헤더 축소 시, 해당 영역으로 스크롤
+  // 2) Scroll to gallery when header is collapsed
   useEffect(() => {
     if (isHeaderCollapsed && galleryRef.current) {
       const OFFSET = 80;
@@ -147,52 +168,72 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     }
   }, [isHeaderCollapsed]);
 
-  // 3) 날짜 + 위치 그룹화
+  // 3) Group photos by date and location with 3km constraint
   function groupPhotosByDateAndLocation(photos: GalleryPhoto[]): PhotoGroup[] {
     const result: PhotoGroup[] = [];
-    let currentGroup: PhotoGroup | null = null;
+    let currentDateGroup: PhotoGroup | null = null;
+    let lastLocation: Coordinates | null = null;
 
-    for (const photo of photos) {
+    photos.forEach((photo) => {
       const dateKey = photo.date
         ? new Date(photo.date).toISOString().slice(0, 10)
         : "Unknown Date";
 
-      const latLonKey =
-        photo.latitude && photo.longitude
-          ? `${photo.latitude.toFixed(3)},${photo.longitude.toFixed(3)}`
-          : "Unknown Location";
+      const lat = photo.latitude;
+      const lng = photo.longitude;
 
-      if (
-        !currentGroup ||
-        currentGroup.dateKey !== dateKey ||
-        currentGroup.locationKey !== latLonKey
-      ) {
-        if (currentGroup) {
-          result.push(currentGroup);
+      const hasLocation = lat !== null && lng !== null;
+      let locationKey = "Unknown Location";
+
+      if (hasLocation && lastLocation) {
+        const distance = getDistanceFromLatLonInKm(
+          lastLocation.lat,
+          lastLocation.lng,
+          lat,
+          lng
+        );
+
+        if (distance > 3) {
+          locationKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+          lastLocation = { lat, lng };
         }
-        currentGroup = {
+      } else if (hasLocation) {
+        locationKey = `${lat!.toFixed(3)},${lng!.toFixed(3)}`;
+        lastLocation = { lat: lat!, lng: lng! };
+      }
+
+      if (!currentDateGroup || currentDateGroup.dateKey !== dateKey) {
+        currentDateGroup = {
           dateKey,
-          locationKey: latLonKey,
+          locationKey: hasLocation ? `${lat!.toFixed(3)},${lng!.toFixed(3)}` : "Unknown Location",
           photos: [photo],
         };
+        result.push(currentDateGroup);
+        lastLocation = hasLocation ? { lat: lat!, lng: lng! } : null;
       } else {
-        currentGroup.photos.push(photo);
+        // Same date, check if a new location group should be created
+        if (locationKey !== currentDateGroup.locationKey) {
+          currentDateGroup = {
+            dateKey,
+            locationKey,
+            photos: [photo],
+          };
+          result.push(currentDateGroup);
+        } else {
+          currentDateGroup.photos.push(photo);
+        }
       }
-    }
-
-    if (currentGroup) {
-      result.push(currentGroup);
-    }
+    });
 
     return result;
   }
 
-  // 4) 이미지 클릭 → 이동
+  // 4) Click on image to navigate
   const handleClickPhoto = (photo: GalleryPhoto) => {
     navigate("/photo-detail", { state: { photo } });
   };
 
-  // 5) Masonry 브레이크포인트
+  // 5) Masonry breakpoints
   const breakpointColumnsObj = {
     default: 6,
     1200: 5,
@@ -202,32 +243,32 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     0: 1,
   };
 
-  // 6) 월 이름 배열
+  // 6) Month names array
   const monthNames = [
     "Jan","Feb","Mar","Apr","May","Jun",
     "Jul","Aug","Sep","Oct","Nov","Dec",
   ];
 
-  // 그룹화된 데이터
+  // Grouped data with updated logic
   const groupedPhotoData = groupPhotosByDateAndLocation(photos);
 
-  // 아이템 배열: 날짜 헤더 → 위치 헤더 → 이미지들
-  const items = groupedPhotoData.flatMap((group) => {
+  // Items array: dateHeader → locationHeader → images
+  const items = groupedPhotoData.flatMap((group, groupIdx) => {
     const arr: Array<
       { type: "dateHeader"; data: PhotoGroup } |
       { type: "locationHeader"; data: PhotoGroup } |
       { type: "image"; data: GalleryPhoto }
     > = [];
 
-    // 날짜 헤더
-    arr.push({ type: "dateHeader", data: group });
-
-    // 위치 헤더
-    if (group.locationKey !== "Unknown Location") {
-      arr.push({ type: "locationHeader", data: group });
+    // For each date group, add a dateHeader once
+    if (groupIdx === 0 || groupedPhotoData[groupIdx - 1].dateKey !== group.dateKey) {
+      arr.push({ type: "dateHeader", data: group });
     }
 
-    // 이미지
+    // Add locationHeader
+    arr.push({ type: "locationHeader", data: group });
+
+    // Add images
     group.photos.forEach((p) => {
       arr.push({ type: "image", data: p });
     });
@@ -237,11 +278,11 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
   return (
     <Box ref={galleryRef} px={4} mb={4}>
-      {/* 로딩/에러 표시 */}
+      {/* Loading/Error Display */}
       {isLoading && (
         <Box textAlign="center" my={4}>
           <Spinner size="lg" />
-          <Text mt={2}>데이터 로딩 중...</Text>
+          <Text mt={2}>Loading data...</Text>
         </Box>
       )}
       {error && (
@@ -250,7 +291,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
         </Box>
       )}
 
-      {/* 실제 Masonry 레이아웃 */}
+      {/* Actual Masonry Layout */}
       {!isLoading && !error && isLoaded && (
         <Masonry
           breakpointCols={breakpointColumnsObj}
@@ -260,32 +301,47 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
           {items.map((item, idx) => {
             if (item.type === "dateHeader") {
               const group = item.data;
-              const dateParts = group.dateKey.split("-");
-              const year = dateParts[0];
-              const monthIndex = parseInt(dateParts[1], 10) - 1;
-              const day = dateParts[2];
-
-              const monthName = monthNames[monthIndex] || "Unknown";
-              const bgColor = getPastelColor(group.dateKey);
-
-              return (
-                <Box
-                  key={`dateHeader-${idx}`}
-                  p={4}
-                  bg={bgColor}
-                  borderRadius="md"
-                  boxShadow="sm"
-                  mb={4}
-                  display="flex"
-                  flexDirection="column"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  {group.dateKey === "Unknown Date" ? (
+              if (group.dateKey === "Unknown Date") {
+                return (
+                  <Box
+                    key={`dateHeader-${idx}`}
+                    p={4}
+                    bg={getPastelColor(group.dateKey)}
+                    borderRadius="md"
+                    boxShadow="sm"
+                    mb={4}
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
                     <Text fontSize="lg" fontWeight="bold">
                       Unknown Date
                     </Text>
-                  ) : (
+                  </Box>
+                );
+              } else {
+                const dateParts = group.dateKey.split("-");
+                const year = dateParts[0];
+                const monthIndex = parseInt(dateParts[1], 10) - 1;
+                const day = dateParts[2];
+
+                const monthName = monthNames[monthIndex] || "Unknown";
+                const bgColor = getPastelColor(group.dateKey);
+
+                return (
+                  <Box
+                    key={`dateHeader-${idx}`}
+                    p={4}
+                    bg={bgColor}
+                    borderRadius="md"
+                    boxShadow="sm"
+                    mb={4}
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
                     <Box>
                       <Text fontSize={20} mb={-4} mt={6} ml={5} color="gray.600">
                         {monthName} {year}
@@ -294,9 +350,9 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
                         {day}일
                       </Text>
                     </Box>
-                  )}
-                </Box>
-              );
+                  </Box>
+                );
+              }
             } else if (item.type === "locationHeader") {
               const group = item.data;
               const [lat, lng] = group.locationKey.split(",").map(Number);
@@ -310,7 +366,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
               if (!isNaN(lat) && !isNaN(lng)) {
                 coordinates = { lat, lng };
-                // 첫 사진의 위치정보 사용
+                // Use the first photo's location info
                 const firstPhoto = group.photos.find(
                   (p) => p.country || p.city || p.state || p.postalCode || p.street
                 );
