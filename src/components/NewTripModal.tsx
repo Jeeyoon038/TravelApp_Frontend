@@ -145,6 +145,7 @@ export default function NewTripModal({
 
   // Create trip
   const handleCreateTrip = async (e: React.FormEvent) => {
+    
     e.preventDefault();
 
     if (!formData.title || !formData.start_date || !formData.end_date) {
@@ -181,9 +182,14 @@ export default function NewTripModal({
 
       const createdTrip = await sendTripToBackend(tripData);
 
+      // In handleCreateTrip function, update the onCreateTrip call:
       await onCreateTrip({
-        tripId: createdTrip.id,
-        ...tripData,
+        tripId: createdTrip.trip_id, // Now using trip_id instead of _id
+        title: tripData.title,
+        start_date: tripData.start_date,
+        end_date: tripData.end_date,
+        image_urls: tripData.image_urls,
+        member_google_ids: tripData.member_google_ids
       });
 
       toast({

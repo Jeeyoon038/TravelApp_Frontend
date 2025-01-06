@@ -1,6 +1,6 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+const API_BASE_URL = "http://localhost:3000";
 
 interface TripData {
   title: string;
@@ -11,7 +11,8 @@ interface TripData {
 }
 
 interface TripResponse {
-  id: string;
+  _id: string;
+  trip_id: string;  // Added this field
   title: string;
   start_date: string;
   end_date: string;
@@ -20,9 +21,6 @@ interface TripResponse {
   created_at: string;
 }
 
-/**
- * Sends trip data to the backend
- */
 export const sendTripToBackend = async (tripData: TripData): Promise<TripResponse> => {
   try {
     const response = await axios.post<TripResponse>(
@@ -41,22 +39,23 @@ export const sendTripToBackend = async (tripData: TripData): Promise<TripRespons
       }
     );
 
-    if (!response.data || !response.data.id) {
+    if (!response.data || !response.data.trip_id) {
       throw new Error('Failed to create trip: Invalid response from server');
     }
 
     console.log('Trip created successfully:', response.data);
     return response.data;
 
-  } catch (error:any) {
+  } catch (error) {
     console.error('Error creating trip:', error);
-    if (isAxiosError(error)) {
-      if (error.response) {
-        throw new Error(`Server error: ${error.response.status} - ${error.response.data?.message || error.message}`);
-      } else if (error.request) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        throw new Error(`Server error: ${axiosError.response.status} - ${axiosError.response.data?.message || axiosError.message}`);
+      } else if (axiosError.request) {
         throw new Error('No response from server. Please check your connection.');
       } else {
-        throw new Error(`Error setting up request: ${error.message}`);
+        throw new Error(`Error setting up request: ${axiosError.message}`);
       }
     }
     throw error;
