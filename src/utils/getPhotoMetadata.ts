@@ -2,6 +2,8 @@
 
 import exifr from "exifr";
 import heic2any from "heic2any"; // HEIC 변환
+import { decode } from "libheif-js"; // HEIC 메타데이터 추출
+
 /**
  * 주의: heic2any는 브라우저 환경에서만 동작합니다. (Node.js 환경 불가)
  *      따라서, Next.js 등에서 서버사이드 렌더링 시 주의가 필요합니다.
@@ -196,11 +198,29 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
       }
     }
 
-    // (B) HEIC이면 JPEG로 변환
+    // (B) HEIC이면 EXIF 추출 및 JPEG로 변환
+    let heicMetadata: Partial<PhotoMetadata> = {};
     let displaySrc = "";
+
     if (mimeType === "image/heic" || mimeType === "image/heif") {
+      try {
+        // HEIC 메타데이터 추출 using libheif-js
+        const heif = await decode(new Uint8Array(arrayBuffer));
+        if (heif && heif.metadata) {
+          // 예시: HEIC 메타데이터 구조에 따라 조정 필요
+          heicMetadata.date = heif.metadata.creation_time
+            ? new Date(heif.metadata.creation_time)
+            : null;
+          heicMetadata.latitude = heif.metadata.latitude || null;
+          heicMetadata.longitude = heif.metadata.longitude || null;
+          // 추가적인 메타데이터 추출 가능
+        }
+      } catch (heicError) {
+        console.error("HEIC 메타데이터 추출 오류:", heicError);
+      }
+
+      // HEIC → JPEG 변환
       const heicBlob = new Blob([arrayBuffer], { type: mimeType });
-      // heic2any 변환
       const convertedBlob = (await heic2any({
         blob: heicBlob,
         toType: "image/jpeg",
@@ -214,7 +234,7 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
     }
 
     // (C) EXIF 파싱
-    const metadata = await exifr.parse(arrayBuffer, {
+    const exifMetadata = await exifr.parse(arrayBuffer, {
       tiff: true,
       ifd0: true,
       exif: true,
@@ -224,14 +244,15 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
 
     // 날짜
     const date: Date | null =
-      metadata?.DateTimeOriginal ||
-      metadata?.CreateDate ||
-      metadata?.DateTime ||
+      exifMetadata?.DateTimeOriginal ||
+      exifMetadata?.CreateDate ||
+      exifMetadata?.DateTime ||
+      heicMetadata.date ||
       null;
 
     // 위/경도
-    const latitude: number | null = metadata?.latitude ?? null;
-    const longitude: number | null = metadata?.longitude ?? null;
+    const latitude: number | null = exifMetadata?.latitude ?? heicMetadata.latitude ?? null;
+    const longitude: number | null = exifMetadata?.longitude ?? heicMetadata.longitude ?? null;
 
     // (D) 역지오코딩
     let country: string | null = null;
@@ -249,7 +270,7 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
       street = location.street;
     }
 
-    // (E) 만약 이미 JPEG이었다면 displaySrc는?
+    // (E) 만약 이미 JPEG였다면 displaySrc는?
     //     - 그냥 source(문자열) 혹은 File URL을 사용하거나,
     //       blob -> DataURL 변환을 원하는 경우 변환하세요.
     if (!displaySrc) {
