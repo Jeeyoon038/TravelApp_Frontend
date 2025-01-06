@@ -1,272 +1,406 @@
-import React, { useState, UIEvent, useRef } from "react";
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Image,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
-  Text,
-  useDisclosure
-} from "@chakra-ui/react";
-import { useLocation, useNavigate } from "react-router-dom";
-import BottomTabBar from "../components/BottomTabBar";
-import GroupDetail from "../components/GroupDetail";
-import MyGroupStoryScroll from "../components/MyGroupStoryScroll";
-import { Group } from "../types/group";
+// src/pages/Home.tsx
 
-const mockGroups: Group[] = [
-  {
-    id: 1,
-    name: "친구들과의 제주도 여행",
-    nickname: "제주 불주먹",
-    coverImage: "/images/image3.jpg",
-    members: ["profile1.jpg", "profile2.jpg", "profile3.jpg"],
-    places: ["제주도", "우도", "성산일출봉"],
-    dates: ["2024-10-12 ~ 2024-10-15"],
-    galleryImages: [
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-    ],
-  },
-  {
-    id: 2,
-    name: "가족 여행",
-    nickname: "우리집 최고",
-    coverImage: "/images/image5.jpg",
-    members: ["profile1.jpg", "profile3.jpg"],
-    places: ["강원도", "주문진", "속초"],
-    dates: ["2025-01-01 ~ 2025-01-05"],
-    galleryImages: [
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-    ],
-  },
-  {
-    id: 3,
-    name: "회사 워크샵",
-    nickname: "열정 가득 우리팀",
-    coverImage: "/images/image9.jpg",
-    members: ["profile2.jpg", "profile1.jpg", "profile3.jpg"],
-    places: ["서울", "분당", "수원"],
-    dates: ["2025-03-10 ~ 2025-03-12"],
-    galleryImages: [
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-    ],
-  },
-  {
-    id: 4,
-    name: "몰입캠프",
-    nickname: "열정 가득 우리팀",
-    coverImage: "/images/image1.jpg",
-    members: ["홍길동", "김코딩", "박해커"],
-    places: ["서울", "분당", "수원"],
-    dates: ["2025-03-10 ~ 2025-03-12"],
-    galleryImages: [
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-    ],
-  },
-  {
-    id: 6,
-    name: "이얍얍",
-    nickname: "열정 가득 우리팀",
-    coverImage: "/images/image1.jpg",
-    members: ["홍길동", "김코딩", "박해커"],
-    places: ["서울", "분당", "수원"],
-    dates: ["2025-03-10 ~ 2025-03-12"],
-    galleryImages: [
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-      "/images/image2.jpg",
-      "/images/image3.jpg",
-      "/images/image4.jpg",
-    ],
-  },
-];
+import React, { useState, useRef, useEffect, UIEvent } from "react";
+import { 
+  Flex, 
+  Box, 
+  Spinner, 
+  Text, 
+  useDisclosure, 
+  useToast 
+} from "@chakra-ui/react";
+import axios from "axios";
+
+import BottomTabBar from "../components/BottomTabBar";
+import HomeHeader from "../components/HomeHeader";
+import GroupStorySection from "../components/GroupStorySection";
+import NewTripModal from "../components/NewTripModal";
+import ErrorBoundary from "../components/ErrorBoundary";
+
+import { Group } from "../types/group";
+import { extractMetadataFromUrls, Metadata } from "../utils/ExifMetadataExtractor";
+
+const API_BASE_URL = "http://localhost:3000/";
+
+// Assuming you have a user object or context
+const user = {
+  profilePicture: "", // Replace with actual user profile picture
+  name: "User" // Replace with actual user name
+};
 
 export default function Home() {
-  const [selectedGroup, setSelectedGroup] = useState<Group>(mockGroups[0]);
-  
-  // Initialize user with a mock logged-in user
-  const [user, setUser] = useState<any>({
-    access_token: "mock_token_12345",
-    email: "johndoe@example.com",
-    name: "여행의신",
-    profilePicture: "/images/default-profile.jpg",
-  });
+  // State Hooks - Consistently ordered at the top
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showCollapsedHeader, setShowCollapsedHeader] = useState<boolean>(false);
+  const [scrollTop, setScrollTop] = useState<number>(0);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [extractedMetadata, setExtractedMetadata] = useState<Metadata[]>([]);
+  const [isMetadataExtracting, setIsMetadataExtracting] = useState<boolean>(false);
+  const [metadataError, setMetadataError] = useState<string | null>(null);
 
+  // Ref Hooks
+  const bigHeaderRef = useRef<HTMLDivElement>(null);
+
+  // Chakra UI and other third-party hooks
+  const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [newTrip, setNewTrip] = useState({
-    title: "",
-    start_date: "",
-    end_date: "",
-  });
 
+  // Fetch groups from backend API on component mount
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  /**
+   * Fetches trip groups from the backend API.
+   * Logs the fetched groups and handles errors gracefully.
+   */
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching groups from backend...");
+      const response = await axios.get(`${API_BASE_URL}trips`);
+      console.log("Groups fetched successfully:", response.data);
+      const fetchedGroups: Group[] = response.data.map((trip: any) => ({
+        trip_id: trip.trip_id,
+        title: trip.title,
+        start_date: new Date(trip.start_date),
+        end_date: new Date(trip.end_date),
+        image_urls: trip.image_urls || [],
+        member_google_ids: trip.member_google_ids || [],
+      }));
+
+      setGroups(fetchedGroups);
+      if (fetchedGroups.length > 0) {
+        setSelectedGroup(fetchedGroups[0]);
+        console.log("Selected first group as default:", fetchedGroups[0]);
+      }
+    } catch (error: any) {
+      console.error("Error fetching groups:", error);
+      toast({
+        title: "Error fetching groups",
+        description: error.message || "Failed to fetch groups",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+      console.log("Finished fetching groups.");
+    }
+  };
+
+  /**
+   * Uploads an array of images to the backend (which presumably uploads them to S3).
+   * Logs each upload attempt, success, and failure.
+   * @param files Array of File objects to upload.
+   * @returns Promise resolving to an array of uploaded image URLs.
+   */
   const uploadImages = async (files: File[]): Promise<string[]> => {
     const imageUrls: string[] = [];
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const formData = new FormData();
       formData.append("file", file);
-  
-      const response = await fetch("http://localhost:3000/upload/image", {
-        method: "POST",
-        body: formData,
-      });
-  
-      if (response.ok) {
-        const data = await response.json();
-        imageUrls.push(data.imageUrl);
-      } else {
-        console.error("Image upload failed:", file.name);
+
+      try {
+        console.log(`Uploading image ${i + 1}/${files.length}:`, file.name);
+        const response = await fetch(`${API_BASE_URL}upload/image`, {
+          method: "POST",
+          body: formData,
+        });
+
+        console.log(`Upload Response Status for image ${i + 1}:`, response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`Uploaded Image URL for image ${i + 1}:`, data.imageUrl);
+          imageUrls.push(data.imageUrl);
+        } else {
+          // Attempt to parse error message from response
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch (parseError) {
+            console.error(`Failed to parse error response for image ${i + 1}:`, parseError);
+            errorData = { message: "Unknown error occurred during image upload." };
+          }
+          console.error(`Image upload failed for image ${i + 1}:`, errorData);
+          toast({
+            title: "Image Upload Failed",
+            description: `Failed to upload image: ${file.name}. Error: ${errorData.message || "Unknown error"}`,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      } catch (error: any) {
+        console.error(`Error uploading image ${i + 1}:`, error);
+        toast({
+          title: "Image Upload Error",
+          description: error.message || `An error occurred while uploading image ${file.name}.`,
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
       }
     }
+    console.log("All image uploads completed. Uploaded URLs:", imageUrls);
     return imageUrls;
   };
 
-  const [scrollTop, setScrollTop] = useState(0);
-  const [showCollapsedHeader, setShowCollapsedHeader] = useState(false);
+  /**
+   * Uploads metadata for each image to the backend.
+   * Logs the payload being sent, the response status, and any errors encountered.
+   * @param metadataArray Array of Metadata objects to upload.
+   */
+  const uploadMetadata = async (metadataArray: Metadata[]) => {
+    for (let i = 0; i < metadataArray.length; i++) {
+      const metadata = metadataArray[i];
 
-  const location = useLocation();
-  const navigate = useNavigate();
-  const bigHeaderRef = useRef<HTMLDivElement>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+      // Only send metadata if all required fields are available
+      if (metadata.latitude !== null && metadata.longitude !== null && metadata.taken_at !== null) {
+        const payload = {
+          latitude: metadata.latitude,
+          longitude: metadata.longitude,
+          taken_at: metadata.taken_at,
+          image_url: metadata.image_url,
+          image_id: metadata.image_id,
+        };
 
+        // **Debugging Step 1: Log the Payload**
+        console.log(`Sending metadata for image ${i + 1}:`, payload);
+
+        try {
+          const metadataResponse = await fetch(`${API_BASE_URL}image-metadata`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          // **Debugging Step 2: Log the Response Status**
+          console.log(`Metadata POST Response Status for image ${i + 1}:`, metadataResponse.status);
+
+          if (metadataResponse.status === 201) {
+            console.log(`Metadata for image ${i + 1} saved successfully.`);
+            toast({
+              title: "Image Metadata Saved",
+              description: `Metadata for image ${i + 1} has been saved.`,
+              status: "success",
+              duration: 3000,
+              isClosable: true,
+            });
+          } else {
+            // **Debugging Step 3: Log the Response Body for Errors**
+            let errorData;
+            try {
+              errorData = await metadataResponse.json();
+            } catch (parseError) {
+              console.error(`Failed to parse error response for metadata of image ${i + 1}:`, parseError);
+              errorData = { message: "Unknown error occurred during metadata upload." };
+            }
+            console.error(`Failed to save metadata for image ${i + 1}:`, errorData);
+            toast({
+              title: "Metadata Save Failed",
+              description: `Failed to save metadata for image ${i + 1}. Error: ${errorData.message || "Unknown error"}`,
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+            });
+          }
+        } catch (error: any) {
+          // **Debugging Step 4: Log Network or Parsing Errors**
+          console.error(`Error saving metadata for image ${i + 1}:`, error);
+          toast({
+            title: "Metadata Upload Error",
+            description:
+              error.message || `An error occurred while uploading metadata for image ${i + 1}.`,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      } else {
+        console.warn(`Metadata for image ${i + 1} is incomplete and was not saved.`);
+        toast({
+          title: "Incomplete Metadata",
+          description: `Metadata for image ${i + 1} is incomplete and was not saved.`,
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    }
+    console.log("All metadata uploads completed.");
+  };
+
+  /**
+   * Handles the creation of a new trip.
+   * Steps:
+   * 1. Upload selected images.
+   * 2. Extract metadata from uploaded image URLs.
+   * 3. Create the trip in the backend.
+   * 4. Upload metadata for all images.
+   * 5. Refresh the group list.
+   * @param tripData Object containing trip details and selected files.
+   */
+  const handleCreateTrip = async (tripData: {
+    title: string;
+    start_date: string;
+    end_date: string;
+    selectedFiles: File[];
+  }) => {
+    try {
+      console.log("Starting trip creation process with data:", tripData);
+      
+      // Step 1: Upload selected images and get their URLs
+      const uploadedImageUrls = await uploadImages(tripData.selectedFiles);
+      setImageUrls(uploadedImageUrls);
+
+      if (!uploadedImageUrls || uploadedImageUrls.length === 0) {
+        toast({
+          title: "No Images Uploaded",
+          description: "Please upload at least one image for the trip.",
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      // Step 2: Extract metadata from image URLs
+      setIsMetadataExtracting(true);
+      setMetadataError(null);
+
+      let metadata: Metadata[] = [];
+      try {
+        console.log("Extracting metadata from image URLs...");
+        metadata = await extractMetadataFromUrls(uploadedImageUrls);
+        setExtractedMetadata(metadata);
+        console.log("Metadata extraction completed:", metadata);
+      } catch (error: any) {
+        console.error("Error extracting metadata:", error);
+        toast({
+          title: "Metadata Extraction Failed",
+          description: error.message || "Failed to extract metadata from images.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+        setMetadataError(error.message || "Metadata extraction failed.");
+        setIsMetadataExtracting(false);
+        return;
+      }
+
+      setIsMetadataExtracting(false);
+
+      // Step 3: Create the trip in the Trip Database
+      console.log("Creating trip in the backend...");
+      const tripResponse = await fetch(`${API_BASE_URL}trips`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: tripData.title,
+          start_date: new Date(tripData.start_date).toISOString(),
+          end_date: new Date(tripData.end_date).toISOString(),
+          image_urls: uploadedImageUrls,
+          member_google_ids: [],
+        }),
+      });
+
+      console.log("Trip creation response status:", tripResponse.status);
+
+      if (tripResponse.status === 201) {
+        console.log("Trip created successfully.");
+        toast({
+          title: "Trip Created",
+          description: "Your trip has been created successfully.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+
+        // Step 4: Upload metadata for all images
+        console.log("Uploading metadata for all images...");
+        await uploadMetadata(metadata);
+
+        // Step 5: Refresh the group list after adding a new trip
+        console.log("Refreshing group list...");
+        fetchGroups();
+      } else {
+        // **Debugging Step 1: Log the Response Body for Errors**
+        let errorData;
+        try {
+          errorData = await tripResponse.json();
+        } catch (parseError) {
+          console.error("Failed to parse trip creation error response:", parseError);
+          errorData = { message: "Unknown error occurred during trip creation." };
+        }
+        console.error("Failed to create trip:", errorData);
+        toast({
+          title: "Trip Creation Failed",
+          description: `Failed to create the trip. Error: ${errorData.message || "Unknown error"}`,
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    } catch (error: any) {
+      console.error("Error creating trip:", error);
+      toast({
+        title: "Error",
+        description: error.message || "An unexpected error occurred.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      setIsMetadataExtracting(false);
+      setMetadataError(error.message || "Metadata extraction failed.");
+    }
+  };
+
+  /**
+   * Handles file selection from the NewTripModal.
+   * Logs the selected files for debugging.
+   * @param files Array of selected File objects.
+   */
+  const handleFileSelection = (files: File[]) => {
+    console.log("Files selected for upload:", files);
+    setSelectedFiles(files);
+  };
+
+  /**
+   * Handles metadata extraction callback.
+   * Not used currently as extraction is handled within handleCreateTrip.
+   * @param metadataArray Array of extracted Metadata objects.
+   */
+  const handleMetadataExtracted = (metadataArray: Metadata[]) => {
+    console.log('Extracted metadata:', metadataArray);
+    setExtractedMetadata(metadataArray);
+  };
+
+  /**
+   * Handles scroll behavior to show/hide the collapsed header.
+   * @param e UIEvent from the scroll.
+   */
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
     setScrollTop(newScrollTop);
     setShowCollapsedHeader(newScrollTop > 300);
+    console.log("Scrolled to:", newScrollTop);
   };
 
-  function handleSelectGroup(group: Group): void {
-    setSelectedGroup(group);
+  // Show loading screen if fetching data
+  if (loading) {
+    return (
+      <Flex justify="center" align="center" height="100vh">
+        <Spinner size="xl" />
+        <Text ml={4}>Loading...</Text>
+      </Flex>
+    );
   }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewTrip(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setSelectedFiles(Array.from(e.target.files));
-    }
-  };
-
-  const handleCreateTrip = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const imageUrls = await uploadImages(selectedFiles);
-
-      const response = await fetch('http://localhost:3000/trips', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: newTrip.title,
-          start_date: new Date(newTrip.start_date).toISOString(),
-          end_date: new Date(newTrip.end_date).toISOString(),  
-          image_urls: imageUrls,
-          member_google_ids: []
-        }),
-      });
-  
-      if (response.ok) {
-        onClose();
-      }
-    } catch (error) {
-      console.error('Error creating trip:', error);
-    }
-  };
 
   return (
     <Flex direction="column" h="100vh" bg="#F2F2F2">
@@ -276,149 +410,60 @@ export default function Home() {
         onScroll={handleScroll}
         css={{
           "&::-webkit-scrollbar": { display: "none" },
-          "-ms-overflow-style": "none",
-          "scrollbar-width": "none",
+          msOverflowStyle: "none",
+          scrollbarWidth: "none",
         }}
       >
-        <Box
-          bg="white"
-          boxShadow="md"
-          borderTopRadius={0}
-          borderBottomRadius={10}
-          p={4}
-        >
-          <Text fontWeight="bold" fontSize={24} mb={3}>
-            My Travel Log
-          </Text>
-          
-          <Flex alignItems="center">
-            {user && (
-              <Image
-                src={user.profilePicture || "/images/default-profile.jpg"}
-                alt="User Profile"
-                boxSize="45px"
-                borderRadius="full"
-                objectFit="cover"
-                mr={4}
-              />
-            )}
-            <Text fontWeight={500} fontSize="sm" mr={2}>
-              {user
-                ? "여행을 함께 할 새로운 그룹을 생성하세요."
-                : "로그인 해주세요."}
-            </Text>
-            <Button
-              size="sm"
-              bg="white"
-              color="blue.500"
-              border="1px"
-              borderColor="blue.500"
-              borderRadius="md"
-              _hover={{
-                bg: "blue.50",
-                color: "blue.600"
-              }}
-              boxShadow="sm"
-              onClick={onOpen}
-            >
-              + New Trip
-            </Button>
-          </Flex>
-        </Box>
+        <HomeHeader 
+          user={user} 
+          onCreateTrip={onOpen} 
+        />
 
-        <Box
-          bg="white"
-          boxShadow="md"
-          borderRadius={10}
-          mt={2}
-          mb={2}
-          p={3}
-          pr={-3}
-          style={{
-            transition: "all 0.3s ease",
-            transform: showCollapsedHeader ? "scale(0.95)" : "scale(1)",
-            opacity: showCollapsedHeader ? 0.9 : 1,
-          }}
-        >
-          <MyGroupStoryScroll
-            groups={mockGroups}
-            selectedGroupId={selectedGroup.id}
-            onSelectGroup={handleSelectGroup}
-          />
-        </Box>
-
-        <Box
-          bg="white"
-          boxShadow="md"
-          borderRadius="lg"
-        >
-          <GroupDetail
-            group={selectedGroup}
-            isHeaderCollapsed={showCollapsedHeader}
-          />
-        </Box>
+        <GroupStorySection 
+          groups={groups}
+          selectedGroup={selectedGroup}
+          onSelectGroup={setSelectedGroup}
+          isHeaderCollapsed={showCollapsedHeader}
+        />
       </Box>
 
       <Box position="sticky" bottom="0" zIndex="10">
         <BottomTabBar />
       </Box>
 
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Create New Trip</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <form onSubmit={handleCreateTrip}>
-              <FormControl mb={4}>
-                <FormLabel>Trip Title</FormLabel>
-                <Input
-                  name="title"
-                  placeholder="Enter trip title"
-                  value={newTrip.title}
-                  onChange={handleInputChange}
-                  required
-                />
-              </FormControl>
-              <FormControl mb={4}>
-                <FormLabel>Images</FormLabel>
-                <Input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-              </FormControl>
-              <FormControl mb={4}>
-                <FormLabel>Start Date</FormLabel>
-                <Input
-                  name="start_date"
-                  type="date"
-                  value={newTrip.start_date}
-                  onChange={handleInputChange}
-                  required
-                />
-              </FormControl>
+      <NewTripModal 
+        isOpen={isOpen} 
+        onClose={onClose} 
+        onCreateTrip={handleCreateTrip} 
+        onFileChange={handleFileSelection}
+        selectedFiles={selectedFiles}
+      />
 
-              <FormControl mb={4}>
-                <FormLabel>End Date</FormLabel>
-                <Input
-                  name="end_date"
-                  type="date"
-                  value={newTrip.end_date}
-                  onChange={handleInputChange}
-                  required
-                />
-              </FormControl>
+      {/* Optionally, display a spinner or message during metadata extraction */}
+      {isMetadataExtracting && (
+        <Box position="fixed" top="50%" left="50%" transform="translate(-50%, -50%)" bg="white" p={4} borderRadius="md" boxShadow="lg">
+          <Flex align="center">
+            <Spinner size="lg" mr={2} />
+            <Text>Extracting metadata...</Text>
+          </Flex>
+        </Box>
+      )}
 
-              <Button colorScheme="blue" mr={3} type="submit">
-                Create Trip
-              </Button>
-              <Button onClick={onClose}>Cancel</Button>
-            </form>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      {/* Optionally, display an error message if metadata extraction failed */}
+      {metadataError && (
+        <Box position="fixed" top="10%" left="50%" transform="translateX(-50%)" bg="red.100" p={4} borderRadius="md">
+          <Text color="red.500">Error extracting metadata: {metadataError}</Text>
+        </Box>
+      )}
+
+      {/* ExifMetadataExtractor is no longer needed as extraction is handled within handleCreateTrip */}
+      {/* <ErrorBoundary>
+        <ExifMetadataExtractor
+          files={selectedFiles}
+          imageUrls={imageUrls}
+          onMetadataExtracted={handleMetadataExtracted}
+        />
+      </ErrorBoundary> */}
     </Flex>
   );
 }

@@ -90,7 +90,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
       try {
         const array: GalleryPhoto[] = [];
 
-        for (const src of group.galleryImages) {
+        for (const src of group.image_urls) {
           // getPhotoMetadata에서 이미 EXIF + HEIC + 역지오코딩 처리
           const meta = await getPhotoMetadata(src);
 
@@ -132,7 +132,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     return () => {
       isMounted = false;
     };
-  }, [group.galleryImages]);
+  }, [group.image_urls]);
 
   // 2) 헤더 축소 시, 해당 영역으로 스크롤
   useEffect(() => {

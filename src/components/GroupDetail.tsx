@@ -31,7 +31,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
   // ------------------------------
   useEffect(() => {
     // galleryImages가 2장 이상일 때만 자동 슬라이드
-    if (group.galleryImages && group.galleryImages.length > 1) {
+    if (group.image_urls && group.image_urls.length > 1) {
       timerRef.current = setInterval(() => {
         moveToNext();
       }, 5000);
@@ -41,14 +41,14 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
       if (timerRef.current) clearInterval(timerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group.galleryImages]);
+  }, [group.image_urls]);
 
   // 다음 이미지로 이동
   const moveToNext = () => {
     setSlideDirection(1); // 오른쪽 → 왼쪽
     setCurrentGalleryIndex((prevIndex) => {
-      if (!group.galleryImages) return prevIndex;
-      return (prevIndex + 1) % group.galleryImages.length;
+      if (!group.image_urls) return prevIndex;
+      return (prevIndex + 1) % group.image_urls.length;
     });
   };
 
@@ -56,8 +56,8 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
   const moveToPrev = () => {
     setSlideDirection(-1); // 왼쪽 → 오른쪽
     setCurrentGalleryIndex((prevIndex) => {
-      if (!group.galleryImages) return prevIndex;
-      return (prevIndex - 1 + group.galleryImages.length) % group.galleryImages.length;
+      if (!group.image_urls) return prevIndex;
+      return (prevIndex - 1 + group.image_urls.length) % group.image_urls.length;
     });
   };
 
@@ -116,9 +116,9 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
   // galleryImages 배열이 있으면 슬라이딩할 currentGalleryIndex 이미지를,
   // 없으면 fallback으로 coverImage를 보여줍니다.
   const currentCoverImage =
-    group.galleryImages && group.galleryImages.length > 0
-      ? group.galleryImages[currentGalleryIndex]
-      : group.coverImage;
+    group.image_urls && group.image_urls.length > 0
+      ? group.image_urls[currentGalleryIndex]
+      : group.image_urls[0];
 
   // ------------------------------
   // (5) 기타 UI/레이아웃
@@ -196,7 +196,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
             <MotionImage
               key={currentGalleryIndex}
               src={currentCoverImage}
-              alt={group.name}
+              alt={group.title}
               w="100%"
               h="100%"
               objectFit="cover"
@@ -252,10 +252,10 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                 color="white"
               >
                 <Text fontSize="3xl" fontWeight="bold" mb={-3}>
-                  {group.nickname}
+                  {group.title}
                 </Text>
                 <Text fontSize="md" fontWeight="light" mb={-6}>
-                  {group.dates.join(", ")}
+                  {group.start_date instanceof Date ? group.start_date.toDateString() : group.start_date}
                 </Text>
               </MotionBox>
             </AnimatePresence>
@@ -276,7 +276,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                 gap={3}
               >
                 <Flex onClick={handleIconToggle} cursor="pointer">
-                  {group.members.map((profileImage, index) => (
+                  {group.member_google_ids.map((profileImage, index) => (
                     <MotionBox
                       key={index}
                       position="relative"
@@ -289,7 +289,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                             : "-16px",
                       }}
                       transition={{ duration: 0.3 }}
-                      zIndex={group.members.length - index}
+                      zIndex={group.member_google_ids.length - index}
                     >
                       <ChakraImage
                         src={`/images/${profileImage}`}
@@ -324,23 +324,23 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
       {!isHeaderCollapsed && (
         <Box px={3} mt={2} textAlign="left">
           <Text fontSize={20} fontWeight="bold" color="black" mb={-1}>
-            {group.nickname}
+            {group.title}
           </Text>
           <Text fontSize={12} fontWeight="light" color="gray.600" mb={-1}>
-            {group.name}
+            {group.title}
           </Text>
           <Text fontSize={12} color="gray.600">
-            {group.dates.join(", ")}
+            {group.end_date instanceof Date ? group.end_date.toDateString() : group.end_date}
           </Text>
 
           {/* 멤버들 프로필 (겹쳐 보여주기) */}
           <Flex mt={3} alignItems="center">
-            {group.members.map((profileImage, index) => (
+            {group.member_google_ids.map((profileImage, index) => (
               <Box
                 key={index}
                 position="relative"
-                mr={index === group.members.length - 1 ? 0 : -4}
-                zIndex={group.members.length - index}
+                mr={index === group.member_google_ids.length - 1 ? 0 : -4}
+                zIndex={group.member_google_ids.length - index}
               >
                 <ChakraImage
                   src={`/images/${profileImage}`}
@@ -352,7 +352,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
               </Box>
             ))}
             <Text ml={1.5} fontSize="sm" color="gray.500">
-              {group.members.join(", ")}
+              {group.member_google_ids.join(", ")}
             </Text>
           </Flex>
         </Box>

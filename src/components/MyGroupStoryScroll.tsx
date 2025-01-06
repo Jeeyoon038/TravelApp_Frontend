@@ -23,7 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 interface MyGroupStoryScrollProps {
   groups: Group[];
-  selectedGroupId: number;
+  selectedGroupId?: number;
   onSelectGroup: (group: Group) => void;
 }
 
@@ -40,15 +40,15 @@ export default function MyGroupStoryScroll({
   useEffect(() => {
     const imagesMap: { [key: number]: string } = {};
     initialGroups.forEach((group) => {
-      if (group.galleryImages && group.galleryImages.length > 0) {
-        const randomIndex = Math.floor(Math.random() * group.galleryImages.length);
-        imagesMap[group.id] = group.galleryImages[randomIndex];
+      if (group.image_urls && group.image_urls.length > 0) {
+        const randomIndex = Math.floor(Math.random() * group.image_urls.length);
+        imagesMap[group.trip_id] = group.image_urls[randomIndex];
       } else {
-        // Fallback image if galleryImages is empty
-        imagesMap[group.id] = "/images/default-image.jpg"; // Ensure this fallback image exists
+        imagesMap[group.trip_id] = "/images/default-image.jpg";
       }
     });
     setGroupImages(imagesMap);
+    setGroups(initialGroups);
   }, [initialGroups]);
 
   const sensors = useSensors(
@@ -75,8 +75,8 @@ export default function MyGroupStoryScroll({
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = groups.findIndex((g) => g.id === Number(active.id));
-    const newIndex = groups.findIndex((g) => g.id === Number(over.id));
+    const oldIndex = groups.findIndex((g) => g.trip_id === Number(active.id));
+    const newIndex = groups.findIndex((g) => g.trip_id === Number(over.id));
     if (oldIndex < 0 || newIndex < 0) return;
 
     const newGroups = arrayMove(groups, oldIndex, newIndex);
@@ -95,7 +95,7 @@ export default function MyGroupStoryScroll({
       onDragCancel={handleDragCancel}
     >
       <SortableContext
-        items={groups.map((g) => g.id.toString())}
+        items={groups.map((g) => g.trip_id.toString())}
         strategy={horizontalListSortingStrategy}
       >
         <Flex
@@ -116,10 +116,10 @@ export default function MyGroupStoryScroll({
         >
           {groups.map((group) => (
             <SortableGroupCard
-              key={group.id}
+              key={group.trip_id}
               group={group}
-              imageSrc={groupImages[group.id]}
-              isSelected={group.id === selectedGroupId}
+              imageSrc={groupImages[group.trip_id]}
+              isSelected={group.trip_id === selectedGroupId}
               onSelectGroup={onSelectGroup}
             />
           ))}
@@ -144,7 +144,7 @@ function SortableGroupCard({
 }: SortableGroupCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
-      id: group.id.toString(),
+      id: group.trip_id.toString(),
     });
 
   const style: React.CSSProperties = {
@@ -153,25 +153,20 @@ function SortableGroupCard({
     zIndex: transform ? 999 : "auto",
   };
 
-  const startDate = group.dates[0].split(" ~ ")[0];
-  const [year, month] = startDate.split("-");
-  const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const monthIndex = parseInt(month, 10) - 1;
-  const monthName = monthNames[monthIndex];
-  const formattedDate = `${monthName} ${year}`;
+  const formatDate = (dateString: string | Date) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    const monthName = monthNames[date.getMonth()];
+    return `${monthName} ${year}`;
+  };
+  
+  // Then in your render function
+  const formattedDate = formatDate(group.start_date);
+
 
   return (
     <Flex
@@ -207,7 +202,7 @@ function SortableGroupCard({
         />
         <Image
           src={imageSrc} // Use the random image source from galleryImages
-          alt={group.name}
+          alt={group.title}
           objectFit="cover"
           w="100%"
           h="100%"
@@ -227,7 +222,7 @@ function SortableGroupCard({
           pb={1}
           width="100%"
         >
-          {group.nickname}
+          {group.title}
         </Text>
         <Text
           position="absolute"

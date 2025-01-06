@@ -106,7 +106,7 @@ export default function CreateTripModal({
       };
 
       // Send trip data to the backend
-      await axios.post('http://localhost:5000/api/trips', tripData);
+      await axios.post('http://localhost:3000/trips', tripData);
 
       setNewTrip({
         title: "",
