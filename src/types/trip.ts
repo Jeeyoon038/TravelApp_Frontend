@@ -10,4 +10,26 @@ export interface Trip {
   trip_id: number;
   __v: number;
 }
+
+// types/trip.ts
+export interface Group {
+  trip_id: number;
+  title: string;
+  start_date: string | Date;
+  image_urls: string[];
+}
+
+export interface Photo {
+  photo_id: number;
+  trip_id: number;
+  url: string;
+  description?: string;
+}
+
+export interface DiaryEntry {
+  photo_id: number;
+  content: string;
+  date: string; // ISO string
+}
+
   

@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { ChakraProvider } from '@chakra-ui/react';
 import { LoadScript } from '@react-google-maps/api';
+import { useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
 import PhotoDetailPage from './pages/PhotoDetailPage';
 import Search from './pages/Search';
 import SearchResultPage from './pages/SearchResultPage';
 //import LoginModal from './components/LoginModal';
+import DiaryPage from './pages/DiaryPage';
 import LoginPage from './pages/LoginPage';
-import NewTripModal from './components/NewTripModal';
 
 export default function App() {
   const [user, setUser] = useState<any>(() => {
@@ -46,6 +46,7 @@ export default function App() {
             <Route path="/photo-detail" element={<PhotoDetailPage />} />
             <Route path="/search" element={<Search />} />
             <Route path="/search-result" element={<SearchResultPage />} />
+            <Route path="/diary" element={<DiaryPage />} />
             {/* <Route path="/create-trip" element={<CreateTripModal />} /> */}
           </Routes>
         </BrowserRouter>
