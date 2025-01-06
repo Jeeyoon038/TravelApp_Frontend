@@ -13,134 +13,83 @@ import {
   ModalHeader,
   ModalOverlay,
   Progress,
-  Spinner,
   Text,
   useToast,
-  VStack
+  VStack,
 } from "@chakra-ui/react";
-import heic2any from "heic2any"; // Import heic2any for HEIC conversion
 import React, { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { FaTimes } from "react-icons/fa";
-import { getPhotoMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
+import { extractMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
+import { sendTripToBackend } from "../utils/tripUploader";
 
 export interface NewTripModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateTrip: (tripData: {
+  onCreateTrip: (newTrip: {
+    tripId: string;
     title: string;
-    start_date: string;
-    end_date: string;
-    selectedFiles: File[];
-    metadata: PhotoMetadata[];
+    start_date: Date;
+    end_date: Date;
+    image_urls: string[];
+    member_google_ids: string[];
   }) => Promise<void>;
 }
 
-const NewTripModal: React.FC<NewTripModalProps> = ({
+interface ProcessingStatus {
+  currentImage: number;
+  totalImages: number;
+  status: string;
+}
+
+export default function NewTripModal({
   isOpen,
   onClose,
   onCreateTrip,
-}) => {
-  const [newTrip, setNewTrip] = useState({
+}: NewTripModalProps) {
+  // Form data
+  const [formData, setFormData] = useState({
     title: "",
     start_date: "",
     end_date: "",
   });
+
+  // File handling states
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [fileMetadata, setFileMetadata] = useState<PhotoMetadata[]>([]); // Metadata storage
-  const [isCreatingTrip, setIsCreatingTrip] = useState<boolean>(false);
-  const [uploadProgress, setUploadProgress] = useState<number>(0); // Progress tracking for uploads
-  const [conversionProgress, setConversionProgress] = useState<number>(0); // Progress tracking for conversions
+  const [processedMetadata, setProcessedMetadata] = useState<PhotoMetadata[]>([]);
+  
+  // Processing states
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
+  const [isCreatingTrip, setIsCreatingTrip] = useState(false);
+  
   const toast = useToast();
 
+  // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewTrip((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  // File upload handling
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      "image/*": [],
-      "image/heic": [], // Allow HEIC files explicitly
-      "image/heif": []
-    },
+    accept: { "image/*": [] },
     multiple: true,
-    onDrop: async (acceptedFiles) => {
-      const processedFiles: File[] = [];
-      const filesWithPreview = acceptedFiles.map((file) => {
-        (file as any).preview = URL.createObjectURL(file);
-        return file;
-      });
-
-      setConversionProgress(0);
-      const totalFiles = filesWithPreview.length;
-
-      for (let i = 0; i < totalFiles; i++) {
-        const file = filesWithPreview[i];
-        try {
-          if (file.type === "image/heic" || file.type === "image/heif") {
-            const convertedBlob = await heic2any({
-              blob: file,
-              toType: "image/jpeg",
-              quality: 0.9,
-            });
-            const convertedFile = new File([convertedBlob], `${file.name}.jpg`, {
-              type: "image/jpeg",
-            });
-            (convertedFile as any).preview = URL.createObjectURL(convertedBlob);
-            processedFiles.push(convertedFile);
-          } else {
-            processedFiles.push(file);
-          }
-          setConversionProgress(Math.round(((i + 1) / totalFiles) * 100));
-        } catch (error) {
-          console.error("HEIC 변환 오류:", error);
-          toast({
-            title: "HEIC 변환 실패",
-            description: `파일 ${file.name}을(를) 변환하는 중 오류가 발생했습니다.`,
-            status: "error",
-            duration: 5000,
-            isClosable: true,
-          });
-          continue;
-        }
-      }
-
-      setSelectedFiles((prev) => [...prev, ...processedFiles]);
-
-      // Extract metadata for all dropped files
-      const metadataPromises = processedFiles.map((file) => getPhotoMetadata(file));
-      try {
-        const metadataResults = await Promise.all(metadataPromises);
-        const mappedMetadata = metadataResults.map((metadata, index) => ({
-          ...metadata,
-          image_url: (processedFiles[index] as any).preview,
-          image_id: `${processedFiles[index].name}-${Date.now()}`, // Generate a unique image ID
-        }));
-        setFileMetadata((prev) => [...prev, ...mappedMetadata]);
-      } catch (error) {
-        console.error("Error extracting metadata:", error);
-        toast({
-          title: "메타데이터 추출 실패",
-          description: "이미지의 메타데이터를 가져오는 중 오류가 발생했습니다.",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
-      }
+    onDrop: (acceptedFiles) => {
+      setSelectedFiles(prev => [...prev, ...acceptedFiles]);
+      setProcessedMetadata([]); // Clear processed metadata when new files are added
     },
   });
 
-  const handleCreateTrip = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newTrip.title || !newTrip.start_date || !newTrip.end_date) {
+  // Process images
+  const processImages = async () => {
+    if (selectedFiles.length === 0) {
       toast({
-        title: "정보 누락",
-        description: "모든 필드를 입력해주세요.",
+        title: "No Images",
+        description: "Please upload at least one image.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -148,10 +97,71 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
       return;
     }
 
-    if (selectedFiles.length === 0) {
+    setIsProcessing(true);
+    setProcessedMetadata([]);
+    
+    try {
+      const metadata = await extractMetadata(
+        selectedFiles,
+        (current, total, status) => {
+          setProcessingStatus({
+            currentImage: current,
+            totalImages: total,
+            status,
+          });
+        }
+      );
+
+      // Verify image URLs
+      const validMetadata = metadata.filter(meta => meta.image_url !== null);
+
+      if (validMetadata.length === 0) {
+        throw new Error('No images were successfully processed');
+      }
+
+      setProcessedMetadata(validMetadata);
+
       toast({
-        title: "이미지 없음",
-        description: "이미지를 최소 1개 이상 업로드해주세요.",
+        title: "Images Processed",
+        description: `Successfully processed ${validMetadata.length} out of ${selectedFiles.length} images.`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error("Error processing images:", error);
+      toast({
+        title: "Processing Error",
+        description: error instanceof Error ? error.message : "Failed to process images",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsProcessing(false);
+      setProcessingStatus(null);
+    }
+  };
+
+  // Create trip
+  const handleCreateTrip = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.title || !formData.start_date || !formData.end_date) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (processedMetadata.length === 0) {
+      toast({
+        title: "No Processed Images",
+        description: "Please process your images before creating the trip.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -160,175 +170,195 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
     }
 
     setIsCreatingTrip(true);
-    setUploadProgress(0);
-
     try {
-      const totalFiles = selectedFiles.length;
-      for (let i = 0; i < totalFiles; i++) {
-        // Simulate file upload progress
-        setUploadProgress(Math.round(((i + 1) / totalFiles) * 100));
+      const tripData = {
+        title: formData.title,
+        start_date: new Date(formData.start_date),
+        end_date: new Date(formData.end_date),
+        image_urls: processedMetadata.map(meta => meta.image_url).filter(Boolean) as string[],
+        member_google_ids: []
+      };
 
-        // Here you would handle the actual file upload logic
-        // For example:
-        // await uploadFile(selectedFiles[i]);
-      }
+      const createdTrip = await sendTripToBackend(tripData);
 
       await onCreateTrip({
-        ...newTrip,
-        selectedFiles,
-        metadata: fileMetadata, // Pass metadata along with files
+        tripId: createdTrip.id,
+        ...tripData,
       });
 
-      setNewTrip({ title: "", start_date: "", end_date: "" });
-      setSelectedFiles([]);
-      setFileMetadata([]); // Clear metadata
-      onClose();
-
       toast({
-        title: "여행 생성 완료",
-        description: "새로운 여행이 성공적으로 생성되었습니다.",
+        title: "Trip Created",
+        description: "Your new trip was successfully created.",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-    } catch (error: any) {
-      console.error("여행 생성 오류:", error);
+
+      // Reset form and close modal
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error("Error creating trip:", error);
       toast({
-        title: "여행 생성 실패",
-        description: error.message || "예기치 않은 오류가 발생했습니다.",
+        title: "Trip Creation Failed",
+        description: error instanceof Error ? error.message : "Failed to create trip",
         status: "error",
         duration: 3000,
         isClosable: true,
       });
     } finally {
       setIsCreatingTrip(false);
-      setUploadProgress(0);
     }
   };
 
+  // Reset form
+  const resetForm = () => {
+    setFormData({ title: "", start_date: "", end_date: "" });
+    setSelectedFiles([]);
+    setProcessedMetadata([]);
+    setProcessingStatus(null);
+  };
+
+  // Remove file
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setProcessedMetadata([]); // Clear processed metadata since files changed
+  };
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      selectedFiles.forEach((file) => {
-        if ((file as any).preview) {
-          URL.revokeObjectURL((file as any).preview);
+      processedMetadata.forEach(metadata => {
+        if (metadata.displaySrc) {
+          URL.revokeObjectURL(metadata.displaySrc);
         }
       });
     };
-  }, [selectedFiles]);
-
-  const removeFile = (index: number) => {
-    const updatedFiles = [...selectedFiles];
-    const updatedMetadata = [...fileMetadata];
-    updatedFiles.splice(index, 1);
-    updatedMetadata.splice(index, 1);
-    setSelectedFiles(updatedFiles);
-    setFileMetadata(updatedMetadata);
-  };
+  }, []);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <ModalOverlay />
       <ModalContent borderRadius="xl" bgGradient="linear(to-r, white, #f2f2f2)">
-        <ModalHeader>새로운 여행 시작</ModalHeader>
+        <ModalHeader>Create a New Trip</ModalHeader>
         <ModalCloseButton />
-        {isCreatingTrip && (
-          <Flex
-            justify="center"
-            align="center"
-            position="absolute"
-            top="0"
-            left="0"
-            right="0"
-            bottom="0"
-            bg="rgba(255, 255, 255, 0.8)"
-            zIndex="10"
-          >
-            <Spinner size="xl" />
-          </Flex>
-        )}
-        {conversionProgress > 0 && (
-          <Box mt={4} mx="auto" width="80%">
-            <Text mb={2}>변환 진행 상황: {conversionProgress}%</Text>
-            <Progress value={conversionProgress} size="sm" colorScheme="green" />
-          </Box>
-        )}
-        {uploadProgress > 0 && (
-          <Box mt={4} mx="auto" width="80%">
-            <Text mb={2}>업로드 진행 상황: {uploadProgress}%</Text>
-            <Progress value={uploadProgress} size="sm" colorScheme="blue" />
-          </Box>
-        )}
         <ModalBody pb={6}>
           <form onSubmit={handleCreateTrip}>
             <VStack spacing={4}>
               <FormControl isRequired>
-                <FormLabel>여행 제목</FormLabel>
+                <FormLabel>Title</FormLabel>
                 <Input
                   name="title"
-                  placeholder="여행 제목"
-                  value={newTrip.title}
+                  placeholder="Trip Title"
+                  value={formData.title}
                   onChange={handleInputChange}
                 />
               </FormControl>
+
               <FormControl isRequired>
-                <FormLabel>사진 업로드</FormLabel>
-                <Box {...getRootProps()} border="2px dashed gray" p={4}>
+                <FormLabel>Images</FormLabel>
+                <Box
+                  {...getRootProps()}
+                  border="2px dashed"
+                  borderColor={isDragActive ? "blue.500" : "gray.300"}
+                  borderRadius="md"
+                  p={4}
+                  cursor="pointer"
+                  transition="border-color 0.2s"
+                  _hover={{ borderColor: "blue.500" }}
+                >
                   <Input {...getInputProps()} />
-                  <Text>
-                    {isDragActive
-                      ? "파일을 여기에 드롭하세요"
-                      : "클릭하거나 파일을 드래그하세요"}
+                  <Text textAlign="center">
+                    {isDragActive ? "Drop your images here" : "Click or drag images to upload"}
                   </Text>
                 </Box>
+
                 {selectedFiles.length > 0 && (
-                  <Flex mt={4} wrap="wrap">
-                    {selectedFiles.map((file, index) => (
-                      <Box key={index} w="80px" h="80px" position="relative">
-                        <Image
-                          src={(file as any).preview}
-                          alt={`미리보기 ${index}`}
-                          boxSize="full"
-                          objectFit="cover"
+                  <Box mt={4}>
+                    <Flex wrap="wrap" gap={2}>
+                      {selectedFiles.map((file, index) => (
+                        <Box key={index} position="relative">
+                          <Image
+                            src={URL.createObjectURL(file)}
+                            alt={`Preview ${index}`}
+                            boxSize="80px"
+                            objectFit="cover"
+                            borderRadius="md"
+                          />
+                          <Button
+                            position="absolute"
+                            top={1}
+                            right={1}
+                            size="xs"
+                            colorScheme="red"
+                            onClick={() => removeFile(index)}
+                          >
+                            <FaTimes />
+                          </Button>
+                        </Box>
+                      ))}
+                    </Flex>
+
+                    {/* Processing status and progress */}
+                    {processingStatus && (
+                      <Box mt={4}>
+                        <Text fontSize="sm" mb={2}>
+                          Processing image {processingStatus.currentImage} of {processingStatus.totalImages}:{" "}
+                          {processingStatus.status}
+                        </Text>
+                        <Progress
+                          value={(processingStatus.currentImage / processingStatus.totalImages) * 100}
+                          size="sm"
+                          colorScheme="blue"
+                          borderRadius="full"
                         />
-                        <Button
-                          position="absolute"
-                          top="2"
-                          right="2"
-                          size="xs"
-                          colorScheme="red"
-                          onClick={() => removeFile(index)}
-                        >
-                          <FaTimes />
-                        </Button>
                       </Box>
-                    ))}
-                  </Flex>
+                    )}
+
+                    <Button
+                      mt={4}
+                      colorScheme="blue"
+                      onClick={processImages}
+                      isLoading={isProcessing}
+                      loadingText="Processing..."
+                      isDisabled={selectedFiles.length === 0}
+                      width="full"
+                    >
+                      Process Images
+                    </Button>
+                  </Box>
                 )}
               </FormControl>
+
               <FormControl isRequired>
-                <FormLabel>시작 날짜</FormLabel>
+                <FormLabel>Start Date</FormLabel>
                 <Input
                   name="start_date"
                   type="date"
-                  value={newTrip.start_date}
+                  value={formData.start_date}
                   onChange={handleInputChange}
                 />
               </FormControl>
+
               <FormControl isRequired>
-                <FormLabel>종료 날짜</FormLabel>
+                <FormLabel>End Date</FormLabel>
                 <Input
                   name="end_date"
                   type="date"
-                  value={newTrip.end_date}
+                  value={formData.end_date}
                   onChange={handleInputChange}
                 />
               </FormControl>
+
               <Button
-                colorScheme="blue"
+                colorScheme="green"
                 type="submit"
+                width="full"
                 isLoading={isCreatingTrip}
+                loadingText="Creating Trip..."
+                isDisabled={processedMetadata.length === 0 || isProcessing}
               >
-                여행 생성
+                Create Trip
               </Button>
             </VStack>
           </form>
@@ -336,6 +366,4 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
       </ModalContent>
     </Modal>
   );
-};
-
-export default NewTripModal;
+}

@@ -8,7 +8,7 @@ import Search from './pages/Search';
 import SearchResultPage from './pages/SearchResultPage';
 //import LoginModal from './components/LoginModal';
 import LoginPage from './pages/LoginPage';
-import CreateTripModal from './components/CreateTripModal';
+import NewTripModal from './components/NewTripModal';
 
 export default function App() {
   const [user, setUser] = useState<any>(() => {

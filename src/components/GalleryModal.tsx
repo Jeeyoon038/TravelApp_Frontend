@@ -4,7 +4,7 @@ import { CloseIcon } from "@chakra-ui/icons";
 import { Box, Image as ChakraImage, Flex, Spinner, Text } from "@chakra-ui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FC, useEffect, useState } from "react";
-import { getPhotoMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
+import { extractMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
 import { MapComponent } from "./MapComponent";
 
 interface Coordinates {
@@ -13,7 +13,7 @@ interface Coordinates {
 }
 
 interface ExtendedPhoto extends PhotoMetadata {
-  originalSrc: string;
+  // Remove originalSrc to avoid redundancy
 }
 
 interface PhotoGroup {
@@ -29,25 +29,18 @@ interface GalleryModalProps {
     profileImage: string;
     username: string;
     location: string;
-    images: string[];
+    images: (string | Blob)[]; // Allow both strings and Blobs
   } | null;
 }
 
 const MotionBox = motion(Box);
 
-// 파스텔 팔레트 + 해시
+// Pastel palette and hash function
 const pastelColors = [
-  "#f2f2f2",
-  "blue.50",
-  "pink.50",
-  "green.50",
-  "yellow.50",
-  "purple.50",
-  "teal.50",
-  "orange.50",
-  "cyan.50",
-  "red.50",
+  "#f2f2f2", "blue.50", "pink.50", "green.50", "yellow.50",
+  "purple.50", "teal.50", "orange.50", "cyan.50", "red.50",
 ];
+
 function hashString(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
@@ -55,29 +48,28 @@ function hashString(str: string): number {
   }
   return hash;
 }
+
 function getPastelColor(key: string): string {
   const index = Math.abs(hashString(key)) % pastelColors.length;
   return pastelColors[index];
 }
 
-// 달 이름
 const monthNames = [
   "Jan","Feb","Mar","Apr","May","Jun",
   "Jul","Aug","Sep","Oct","Nov","Dec",
 ];
 
-// 날짜+위치로 그룹화
 function groupPhotosByDateAndLocation(photos: ExtendedPhoto[]): PhotoGroup[] {
   const result: PhotoGroup[] = [];
   let currentGroup: PhotoGroup | null = null;
 
   for (const photo of photos) {
-    const dateKey = photo.date
-      ? new Date(photo.date).toISOString().slice(0, 10)
+    const dateKey = photo.taken_at
+      ? new Date(photo.taken_at).toISOString().slice(0, 10)
       : "Unknown Date";
 
     const latLonKey =
-      photo.latitude && photo.longitude
+      photo.latitude !== null && photo.longitude !== null
         ? `${photo.latitude.toFixed(3)},${photo.longitude.toFixed(3)}`
         : "Unknown Location";
 
@@ -120,20 +112,18 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
 
     (async () => {
       try {
-        const loaded: ExtendedPhoto[] = [];
-        for (const src of post.images) {
-          const meta = await getPhotoMetadata(src);
-          loaded.push({
-            ...meta,
-            originalSrc: src,
-          });
-        }
+        const metadataResults = await extractMetadata(post.images);
+        const loaded: ExtendedPhoto[] = metadataResults.map((meta, index) => ({
+          ...meta,
+          // Rely on displaySrc from extractMetadata
+          // No need to set originalSrc
+        }));
 
-        // 날짜 오름차순
+        // Sort by taken_at ascending
         loaded.sort((a, b) => {
-          if (a.date && b.date) return a.date.getTime() - b.date.getTime();
-          if (a.date) return -1;
-          if (b.date) return 1;
+          if (a.taken_at && b.taken_at) return new Date(a.taken_at).getTime() - new Date(b.taken_at).getTime();
+          if (a.taken_at) return -1;
+          if (b.taken_at) return 1;
           return 0;
         });
 
@@ -151,10 +141,21 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
     };
   }, [post, isOpen]);
 
-  if (!post) return null;
-
-  // 날짜+위치로 묶기
+  // Group photos by date and location
   const grouped = groupPhotosByDateAndLocation(photos);
+
+  // Clean up Blob URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      photos.forEach((photo) => {
+        if (photo.displaySrc.startsWith('blob:')) {
+          URL.revokeObjectURL(photo.displaySrc);
+        }
+      });
+    };
+  }, [photos]);
+
+  if (!post) return null;
 
   return (
     <AnimatePresence>
@@ -173,7 +174,7 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           zIndex="1000"
-          onClick={onClose} // 모달 바깥 클릭 -> 닫힘
+          onClick={onClose}
         >
           <MotionBox
             bg="white"
@@ -182,18 +183,16 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
             maxHeight="90vh"
             overflowY="auto"
             p={4}
-            onClick={(e) => e.stopPropagation()} // 내부 클릭 -> 닫힘 방지
+            onClick={(e) => e.stopPropagation()}
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.8 }}
             position="relative"
           >
-            {/* 닫기 아이콘 */}
             <Box position="absolute" top="16px" right="16px" cursor="pointer">
               <CloseIcon onClick={onClose} />
             </Box>
 
-            {/* 프로필 */}
             <Flex alignItems="center" mb={6}>
               <Box mr={4}>
                 <ChakraImage
@@ -213,7 +212,6 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
               </Box>
             </Flex>
 
-            {/* 로딩/에러 */}
             {isLoading && (
               <Box textAlign="center" my={4}>
                 <Spinner size="lg" />
@@ -229,7 +227,6 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
             {!isLoading && !error && (
               <>
                 {grouped.map((group, groupIndex) => {
-                  // 날짜 헤더
                   const dateParts = group.dateKey.split("-");
                   const year = dateParts[0];
                   const monthIndex = parseInt(dateParts[1], 10) - 1;
@@ -237,7 +234,6 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
                   const monthName = monthNames[monthIndex] || "Unknown";
                   const dateColor = getPastelColor(group.dateKey);
 
-                  // 위치
                   let coordinates: Coordinates | null = null;
                   let country: string | null = null;
                   let city: string | null = null;
@@ -249,7 +245,6 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
                     const [lat, lng] = group.locationKey.split(",").map(Number);
                     if (!isNaN(lat) && !isNaN(lng)) {
                       coordinates = { lat, lng };
-                      // 해당 그룹 내 첫 사진의 위치 정보
                       const first = group.photos.find(
                         (p) =>
                           p.country || p.city || p.state || p.postalCode || p.street
@@ -267,7 +262,7 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
 
                   return (
                     <Box key={groupIndex} mb={8}>
-                      {/* 날짜 헤더 */}
+                      {/* Date Header */}
                       <Box
                         p={4}
                         bg={dateColor}
@@ -292,7 +287,7 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
                         )}
                       </Box>
 
-                      {/* 위치 헤더 */}
+                      {/* Location Header */}
                       {group.locationKey !== "Unknown Location" && (
                         <Box
                           p={4}
@@ -316,8 +311,12 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
 
                           {coordinates && (
                             <MapComponent
-                              location={city ?? "Unknown"}
                               coordinates={coordinates}
+                              country={country}
+                              city={city}
+                              state={state}
+                              postalCode={postalCode}
+                              street={street}
                               isInteractive={false}
                               mapHeight="180px"
                             />
@@ -325,15 +324,20 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
                         </Box>
                       )}
 
-                      {/* 사진 목록 */}
+                      {/* Images */}
                       <Box>
                         {group.photos.map((photo, idx) => (
                           <Box key={idx} mb={4} borderRadius="md" overflow="hidden">
                             <ChakraImage
-                              src={photo.displaySrc}
-                              alt={`image-${idx}`}
+                              src={photo.displaySrc} // Use displaySrc instead of originalSrc
+                              alt={`Photo taken at ${photo.taken_at || 'unknown date'}`}
                               objectFit="cover"
                               width="100%"
+                              height="auto"
+                              loading="lazy"
+                              borderRadius="md"
+                              transition="transform 0.2s"
+                              _hover={{ transform: "scale(1.05)" }}
                             />
                           </Box>
                         ))}

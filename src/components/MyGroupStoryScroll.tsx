@@ -1,7 +1,7 @@
 // MyGroupStoryScroll.tsx
 import { Box, Flex, Image, Text } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
-import { Group } from "../types/group";
+import { Group } from "../types/trip";
 
 import {
   DndContext,

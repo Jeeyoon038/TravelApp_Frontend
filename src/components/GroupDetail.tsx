@@ -4,7 +4,7 @@ import { Box, Button, Image as ChakraImage, Flex, Text } from "@chakra-ui/react"
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FiPlus } from "react-icons/fi";
-import { Group } from "../types/group";
+import { Group } from "../types/trip";
 import GroupGallery from "./GroupGallery";
 
 const MotionBox = motion(Box);

@@ -3,7 +3,7 @@
 import { Box, Image as ChakraImage, Flex, Text } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { FC, useEffect, useState } from "react";
-import { getPhotoMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
+import { extractMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
 import { MapComponent } from "./MapComponent";
 
 interface Coordinates {
@@ -22,17 +22,19 @@ interface PostCardProps {
 const MotionBox = motion(Box);
 
 const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images, onClick }) => {
-  const [imageMetadata, setImageMetadata] = useState<PhotoMetadata>({
-    date: null,
-    latitude: null,
-    longitude: null,
-  });
+  const [imageMetadata, setImageMetadata] = useState<PhotoMetadata | null>(null);
 
   useEffect(() => {
     async function loadImageMetadata() {
       if (images && images.length > 0) {
-        const metadata = await getPhotoMetadata(images[0]); // 첫 번째 이미지의 메타데이터 사용
-        setImageMetadata(metadata);
+        try {
+          const metadataResults = await extractMetadata([images[0]]);
+          if (metadataResults.length > 0) {
+            setImageMetadata(metadataResults[0]);
+          }
+        } catch (error) {
+          console.error("Error loading image metadata:", error);
+        }
       }
     }
 
@@ -40,7 +42,7 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
   }, [images]);
 
   const coordinates: Coordinates | undefined =
-    imageMetadata.latitude && imageMetadata.longitude
+    imageMetadata?.latitude && imageMetadata?.longitude
       ? { lat: imageMetadata.latitude, lng: imageMetadata.longitude }
       : undefined;
 
@@ -53,7 +55,7 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
       cursor="pointer"
       whileHover={{ scale: 1.02, boxShadow: "lg" }}
       whileTap={{ scale: 0.98 }}
-      onClick={onClick} // 클릭 시 부모에게 전달
+      onClick={onClick}
     >
       {/* 프로필 및 위치 */}
       <Flex alignItems="center" mb={4}>
@@ -113,8 +115,6 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
           />
         )}
       </Box>
-
-      
     </MotionBox>
   );
 };

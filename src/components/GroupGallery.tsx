@@ -5,22 +5,13 @@ import { useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 import Masonry from "react-masonry-css";
 import { useNavigate } from "react-router-dom";
-import "../styles/masonry.css"; // 기존 Masonry 레이아웃 스타일
-import { Group } from "../types/group";
-import { getPhotoMetadata } from "../utils/getPhotoMetadata"; // 통합된 함수
-import { MapComponent } from "./MapComponent"; // 작은 지도 컴포넌트(아래서도 정의 가능)
+import "../styles/masonry.css";
+import { Group } from "../types/trip";
+import { extractMetadata, PhotoMetadata } from "../utils/getPhotoMetadata"; // Updated import
+import { MapComponent } from "./MapComponent";
 
-interface GalleryPhoto {
-  originalSrc: string;
-  displaySrc: string; 
-  date: Date | null;
-  latitude: number | null;
-  longitude: number | null;
-  country: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
-  street: string | null;
+interface GalleryPhoto extends PhotoMetadata {
+  originalSrc: string; // Retains the original source for potential future use
 }
 
 interface GroupGalleryProps {
@@ -28,7 +19,6 @@ interface GroupGalleryProps {
   isHeaderCollapsed: boolean;
 }
 
-// 그룹화된 섹션
 interface PhotoGroup {
   dateKey: string;
   locationKey: string;
@@ -40,19 +30,11 @@ interface Coordinates {
   lng: number;
 }
 
-// 파스텔 색상 팔레트 + 해시
 const pastelColors = [
-  '#f2f2f2',
-  'blue.50',
-  'pink.50',
-  'green.50',
-  'yellow.50',
-  'purple.50',
-  'teal.50',
-  'orange.50',
-  'cyan.50',
-  'red.50',
+  '#f2f2f2', 'blue.50', 'pink.50', 'green.50', 'yellow.50',
+  'purple.50', 'teal.50', 'orange.50', 'cyan.50', 'red.50',
 ];
+
 function hashString(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
@@ -60,10 +42,16 @@ function hashString(str: string): number {
   }
   return hash;
 }
+
 function getPastelColor(key: string): string {
   const index = Math.abs(hashString(key)) % pastelColors.length;
   return pastelColors[index];
 }
+
+const monthNames = [
+  "Jan","Feb","Mar","Apr","May","Jun",
+  "Jul","Aug","Sep","Oct","Nov","Dec",
+];
 
 export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryProps) {
   const navigate = useNavigate();
@@ -74,13 +62,11 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  // Google Maps API 로드
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
 
-  // 1) 사진 메타데이터 로드
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -88,31 +74,16 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
     async function loadMetadata() {
       try {
-        const array: GalleryPhoto[] = [];
+        const metadataResults = await extractMetadata(group.image_urls);
+        const array: GalleryPhoto[] = metadataResults.map((meta, index) => ({
+          ...meta,
+          originalSrc: typeof group.image_urls[index] === 'string' ? group.image_urls[index] : '', // Retain original source if available
+        }));
 
-        for (const src of group.image_urls) {
-          // getPhotoMetadata에서 이미 EXIF + HEIC + 역지오코딩 처리
-          const meta = await getPhotoMetadata(src);
-
-          array.push({
-            originalSrc: src,
-            displaySrc: meta.displaySrc,
-            date: meta.date,
-            latitude: meta.latitude,
-            longitude: meta.longitude,
-            country: meta.country,
-            city: meta.city,
-            state: meta.state,
-            postalCode: meta.postalCode,
-            street: meta.street,
-          });
-        }
-
-        // 날짜 오름차순 정렬 (날짜 없으면 뒤로)
         array.sort((a, b) => {
-          if (a.date && b.date) return a.date.getTime() - b.date.getTime();
-          if (a.date) return -1;
-          if (b.date) return 1;
+          if (a.taken_at && b.taken_at) return new Date(a.taken_at).getTime() - new Date(b.taken_at).getTime();
+          if (a.taken_at) return -1;
+          if (b.taken_at) return 1;
           return 0;
         });
 
@@ -134,7 +105,6 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     };
   }, [group.image_urls]);
 
-  // 2) 헤더 축소 시, 해당 영역으로 스크롤
   useEffect(() => {
     if (isHeaderCollapsed && galleryRef.current) {
       const OFFSET = 80;
@@ -147,14 +117,13 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     }
   }, [isHeaderCollapsed]);
 
-  // 3) 날짜 + 위치 그룹화
   function groupPhotosByDateAndLocation(photos: GalleryPhoto[]): PhotoGroup[] {
     const result: PhotoGroup[] = [];
     let currentGroup: PhotoGroup | null = null;
 
     for (const photo of photos) {
-      const dateKey = photo.date
-        ? new Date(photo.date).toISOString().slice(0, 10)
+      const dateKey = photo.taken_at
+        ? new Date(photo.taken_at).toISOString().slice(0, 10)
         : "Unknown Date";
 
       const latLonKey =
@@ -187,12 +156,10 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     return result;
   }
 
-  // 4) 이미지 클릭 → 이동
   const handleClickPhoto = (photo: GalleryPhoto) => {
     navigate("/photo-detail", { state: { photo } });
   };
 
-  // 5) Masonry 브레이크포인트
   const breakpointColumnsObj = {
     default: 6,
     1200: 5,
@@ -202,16 +169,8 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     0: 1,
   };
 
-  // 6) 월 이름 배열
-  const monthNames = [
-    "Jan","Feb","Mar","Apr","May","Jun",
-    "Jul","Aug","Sep","Oct","Nov","Dec",
-  ];
-
-  // 그룹화된 데이터
   const groupedPhotoData = groupPhotosByDateAndLocation(photos);
 
-  // 아이템 배열: 날짜 헤더 → 위치 헤더 → 이미지들
   const items = groupedPhotoData.flatMap((group) => {
     const arr: Array<
       { type: "dateHeader"; data: PhotoGroup } |
@@ -219,15 +178,12 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
       { type: "image"; data: GalleryPhoto }
     > = [];
 
-    // 날짜 헤더
     arr.push({ type: "dateHeader", data: group });
 
-    // 위치 헤더
     if (group.locationKey !== "Unknown Location") {
       arr.push({ type: "locationHeader", data: group });
     }
 
-    // 이미지
     group.photos.forEach((p) => {
       arr.push({ type: "image", data: p });
     });
@@ -235,9 +191,19 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     return arr;
   });
 
+  // Clean up Blob URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      photos.forEach((photo) => {
+        if (photo.displaySrc.startsWith('blob:')) {
+          URL.revokeObjectURL(photo.displaySrc);
+        }
+      });
+    };
+  }, [photos]);
+
   return (
     <Box ref={galleryRef} px={4} mb={4}>
-      {/* 로딩/에러 표시 */}
       {isLoading && (
         <Box textAlign="center" my={4}>
           <Spinner size="lg" />
@@ -250,7 +216,6 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
         </Box>
       )}
 
-      {/* 실제 Masonry 레이아웃 */}
       {!isLoading && !error && isLoaded && (
         <Masonry
           breakpointCols={breakpointColumnsObj}
@@ -310,7 +275,6 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
               if (!isNaN(lat) && !isNaN(lng)) {
                 coordinates = { lat, lng };
-                // 첫 사진의 위치정보 사용
                 const firstPhoto = group.photos.find(
                   (p) => p.country || p.city || p.state || p.postalCode || p.street
                 );
@@ -356,7 +320,6 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
                 </Box>
               );
             } else {
-              // image
               const photo = item.data;
               return (
                 <Box

@@ -41,7 +41,9 @@ export default function SearchResultPage() {
       {filteredPosts.length > 0 ? (
         filteredPosts.map((post, index) => (
           <Box key={index} mb={10}>
-            <PostCard {...post} />
+            <PostCard onClick={function (): void {
+              throw new Error("Function not implemented.");
+            } } {...post} />
           </Box>
         ))
       ) : (

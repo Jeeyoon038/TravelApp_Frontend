@@ -1,21 +1,65 @@
-// src/utils/imageUploader.ts
 import axios from "axios";
 
-const sendTripToBackend = async (tripData: { groupId: string;  title: string; startDate: string; endDate: string }) => {
-  try {
-    // POST 요청으로 trip 정보를 백엔드로 보냄
-    const response = await axios.post("http://localhost:3000/api/trips", {
-      group_id: tripData.groupId,
-      title: tripData.title,
-      start_date: tripData.startDate,
-      end_date: tripData.endDate,
-    });
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
-    console.log("Trip created successfully:", response.data);
-    return response.data;  // 백엔드에서 반환하는 응답 처리
-  } catch (error) {
-    console.error("Error sending trip data to backend:", error);
-    return null;  // 에러 발생 시 null 반환
+interface TripData {
+  title: string;
+  start_date: Date;
+  end_date: Date;
+  image_urls: string[];
+  member_google_ids: string[];
+}
+
+interface TripResponse {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+  image_urls: string[];
+  member_google_ids: string[];
+  created_at: string;
+}
+
+/**
+ * Sends trip data to the backend
+ */
+export const sendTripToBackend = async (tripData: TripData): Promise<TripResponse> => {
+  try {
+    const response = await axios.post<TripResponse>(
+      `${API_BASE_URL}/trips`,
+      {
+        title: tripData.title,
+        start_date: tripData.start_date.toISOString(),
+        end_date: tripData.end_date.toISOString(),
+        image_urls: tripData.image_urls,
+        member_google_ids: tripData.member_google_ids
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+
+    if (!response.data || !response.data.id) {
+      throw new Error('Failed to create trip: Invalid response from server');
+    }
+
+    console.log('Trip created successfully:', response.data);
+    return response.data;
+
+  } catch (error:any) {
+    console.error('Error creating trip:', error);
+    if (isAxiosError(error)) {
+      if (error.response) {
+        throw new Error(`Server error: ${error.response.status} - ${error.response.data?.message || error.message}`);
+      } else if (error.request) {
+        throw new Error('No response from server. Please check your connection.');
+      } else {
+        throw new Error(`Error setting up request: ${error.message}`);
+      }
+    }
+    throw error;
   }
 };
 

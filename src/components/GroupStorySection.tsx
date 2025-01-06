@@ -5,7 +5,7 @@ import {
 } from "@chakra-ui/react";
 import MyGroupStoryScroll from "../components/MyGroupStoryScroll";
 import GroupDetail from "../components/GroupDetail";
-import { Group } from "../types/group";
+import { Group } from "../types/trip";
 
 interface GroupStorySectionProps {
   groups: Group[];

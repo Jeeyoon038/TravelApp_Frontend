@@ -16,8 +16,7 @@ import GroupStorySection from "../components/GroupStorySection";
 import HomeHeader from "../components/HomeHeader";
 import NewTripModal from "../components/NewTripModal";
 
-import { Group } from "../types/group";
-import { getPhotoMetadata, Metadata } from "../utils/getPhotoMetadata"; // Updated import
+import { Trip } from "../types/trip";
 
 const API_BASE_URL = "http://localhost:3000/";
 
@@ -28,41 +27,27 @@ const user = {
 };
 
 export default function Home() {
-  // State Hooks - Consistently ordered at the top
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [groups, setGroups] = useState<Trip[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<Trip | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [showCollapsedHeader, setShowCollapsedHeader] = useState<boolean>(false);
   const [scrollTop, setScrollTop] = useState<number>(0);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [extractedMetadata, setExtractedMetadata] = useState<Metadata[]>([]);
-  const [isMetadataExtracting, setIsMetadataExtracting] = useState<boolean>(false);
-  const [metadataError, setMetadataError] = useState<string | null>(null);
 
-  // Ref Hooks
   const bigHeaderRef = useRef<HTMLDivElement>(null);
-
-  // Chakra UI and other third-party hooks
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // Fetch groups from backend API on component mount
   useEffect(() => {
     fetchGroups();
   }, []);
 
-  /**
-   * Fetches trip groups from the backend API.
-   * Logs the fetched groups and handles errors gracefully.
-   */
   const fetchGroups = async () => {
     try {
       setLoading(true);
       console.log("Fetching groups from backend...");
       const response = await axios.get(`${API_BASE_URL}trips`);
       console.log("Groups fetched successfully:", response.data);
-      const fetchedGroups: Group[] = response.data.map((trip: any) => ({
+      const fetchedGroups: Trip[] = response.data.map((trip: any) => ({
         trip_id: trip.trip_id,
         title: trip.title,
         start_date: new Date(trip.start_date),
@@ -91,223 +76,19 @@ export default function Home() {
     }
   };
 
-  /**
-   * Uploads an array of images to the backend (which presumably uploads them to S3).
-   * Logs each upload attempt, success, and failure.
-   * @param files Array of File objects to upload.
-   * @returns Promise resolving to an array of uploaded image URLs.
-   */
-  const uploadImages = async (files: File[]): Promise<string[]> => {
-    const imageUrls: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const formData = new FormData();
-      formData.append("file", file);
-
-      try {
-        console.log(`Uploading image ${i + 1}/${files.length}:`, file.name);
-        const response = await fetch(`${API_BASE_URL}upload/image`, {
-          method: "POST",
-          body: formData,
-        });
-
-        console.log(`Upload Response Status for image ${i + 1}:`, response.status);
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`Uploaded Image URL for image ${i + 1}:`, data.imageUrl);
-          imageUrls.push(data.imageUrl);
-        } else {
-          // Attempt to parse error message from response
-          let errorData;
-          try {
-            errorData = await response.json();
-          } catch (parseError) {
-            console.error(`Failed to parse error response for image ${i + 1}:`, parseError);
-            errorData = { message: "Unknown error occurred during image upload." };
-          }
-          console.error(`Image upload failed for image ${i + 1}:`, errorData);
-          toast({
-            title: "Image Upload Failed",
-            description: `Failed to upload image: ${file.name}. Error: ${errorData.message || "Unknown error"}`,
-            status: "error",
-            duration: 5000,
-            isClosable: true,
-          });
-        }
-      } catch (error: any) {
-        console.error(`Error uploading image ${i + 1}:`, error);
-        toast({
-          title: "Image Upload Error",
-          description: error.message || `An error occurred while uploading image ${file.name}.`,
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    }
-    console.log("All image uploads completed. Uploaded URLs:", imageUrls);
-    return imageUrls;
-  };
-
-  /**
-   * Uploads metadata for each image to the backend.
-   * Logs the payload being sent, the response status, and any errors encountered.
-   * @param metadataArray Array of Metadata objects to upload.
-   */
-  const uploadMetadata = async (metadataArray: Metadata[]) => {
-    for (let i = 0; i < metadataArray.length; i++) {
-      const metadata = metadataArray[i];
-
-      // Only send metadata if all required fields are available
-      if (metadata.latitude !== null && metadata.longitude !== null && metadata.taken_at !== null) {
-        const payload = {
-          latitude: metadata.latitude,
-          longitude: metadata.longitude,
-          taken_at: metadata.taken_at,
-          image_url: metadata.image_url,
-          image_id: metadata.image_id,
-        };
-
-        // **Debugging Step 1: Log the Payload**
-        console.log(`Sending metadata for image ${i + 1}:`, payload);
-
-        try {
-          const metadataResponse = await fetch(`${API_BASE_URL}image-metadata`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-
-          // **Debugging Step 2: Log the Response Status**
-          console.log(`Metadata POST Response Status for image ${i + 1}:`, metadataResponse.status);
-
-          if (metadataResponse.status === 201) {
-            console.log(`Metadata for image ${i + 1} saved successfully.`);
-            toast({
-              title: "Image Metadata Saved",
-              description: `Metadata for image ${i + 1} has been saved.`,
-              status: "success",
-              duration: 3000,
-              isClosable: true,
-            });
-          } else {
-            // **Debugging Step 3: Log the Response Body for Errors**
-            let errorData;
-            try {
-              errorData = await metadataResponse.json();
-            } catch (parseError) {
-              console.error(`Failed to parse error response for metadata of image ${i + 1}:`, parseError);
-              errorData = { message: "Unknown error occurred during metadata upload." };
-            }
-            console.error(`Failed to save metadata for image ${i + 1}:`, errorData);
-            toast({
-              title: "Metadata Save Failed",
-              description: `Failed to save metadata for image ${i + 1}. Error: ${errorData.message || "Unknown error"}`,
-              status: "error",
-              duration: 5000,
-              isClosable: true,
-            });
-          }
-        } catch (error: any) {
-          // **Debugging Step 4: Log Network or Parsing Errors**
-          console.error(`Error saving metadata for image ${i + 1}:`, error);
-          toast({
-            title: "Metadata Upload Error",
-            description:
-              error.message || `An error occurred while uploading metadata for image ${i + 1}.`,
-            status: "error",
-            duration: 5000,
-            isClosable: true,
-          });
-        }
-      } else {
-        console.warn(`Metadata for image ${i + 1} is incomplete and was not saved.`);
-        toast({
-          title: "Incomplete Metadata",
-          description: `Metadata for image ${i + 1} is incomplete and was not saved.`,
-          status: "warning",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    }
-    console.log("All metadata uploads completed.");
-  };
-
-  /**
-   * Handles the creation of a new trip.
-   * Steps:
-   * 1. Extract metadata from selected files.
-   * 2. Upload selected images.
-   * 3. Create the trip in the backend.
-   * 4. Upload metadata for all images.
-   * 5. Refresh the group list.
-   * @param tripData Object containing trip details and selected files.
-   */
-  const handleCreateTrip = async (tripData: {
-    title: string;
-    start_date: string;
-    end_date: string;
-    selectedFiles: File[];
-  }) => {
+  const handleCreateTrip = async (newTrip: {
+      title: string;
+      start_date: Date;
+      end_date: Date;
+      image_urls: string[];
+      member_google_ids: string[];
+    }) => {
     try {
-      console.log("Starting trip creation process with data:", tripData);
-      
-      // Step 1: Extract metadata from selected files
-      setIsMetadataExtracting(true);
-      setMetadataError(null);
-
-      let metadata: Metadata[] = [];
-      try {
-        console.log("Extracting metadata from selected files...");
-        const metadataPromises = tripData.selectedFiles.map((file) => getPhotoMetadata(file));
-        metadata = await Promise.all(metadataPromises);
-        setExtractedMetadata(metadata);
-        console.log("Metadata extraction completed:", metadata);
-      } catch (error: any) {
-        console.error("Error extracting metadata:", error);
-        toast({
-          title: "Metadata Extraction Failed",
-          description: error.message || "Failed to extract metadata from images.",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
-        setMetadataError(error.message || "Metadata extraction failed.");
-        setIsMetadataExtracting(false);
-        return;
-      }
-
-      setIsMetadataExtracting(false);
-
-      // Step 2: Upload selected images and get their URLs
-      const uploadedImageUrls = await uploadImages(tripData.selectedFiles);
-      setImageUrls(uploadedImageUrls);
-
-      if (!uploadedImageUrls || uploadedImageUrls.length === 0) {
-        toast({
-          title: "No Images Uploaded",
-          description: "Please upload at least one image for the trip.",
-          status: "warning",
-          duration: 3000,
-          isClosable: true,
-        });
-        return;
-      }
-
-      // Step 3: Create the trip in the Trip Database
       console.log("Creating trip in the backend...");
       const tripResponse = await fetch(`${API_BASE_URL}trips`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: tripData.title,
-          start_date: new Date(tripData.start_date).toISOString(),
-          end_date: new Date(tripData.end_date).toISOString(),
-          image_urls: uploadedImageUrls,
-          member_google_ids: [],
-        }),
+        body: JSON.stringify(newTrip),
       });
 
       console.log("Trip creation response status:", tripResponse.status);
@@ -322,15 +103,10 @@ export default function Home() {
           isClosable: true,
         });
 
-        // Step 4: Upload metadata for all images
-        console.log("Uploading metadata for all images...");
-        await uploadMetadata(metadata);
-
-        // Step 5: Refresh the group list after adding a new trip
+        // Refresh the group list after adding a new trip
         console.log("Refreshing group list...");
         fetchGroups();
       } else {
-        // **Debugging Step 1: Log the Response Body for Errors**
         let errorData;
         try {
           errorData = await tripResponse.json();
@@ -356,43 +132,15 @@ export default function Home() {
         duration: 5000,
         isClosable: true,
       });
-      setIsMetadataExtracting(false);
-      setMetadataError(error.message || "Metadata extraction failed.");
     }
   };
 
-  /**
-   * Handles file selection from the NewTripModal.
-   * Logs the selected files for debugging.
-   * @param files Array of selected File objects.
-   */
-  const handleFileSelection = (files: File[]) => {
-    console.log("Files selected for upload:", files);
-    setSelectedFiles(files);
-  };
-
-  /**
-   * Handles metadata extraction callback.
-   * Not used currently as extraction is handled within handleCreateTrip.
-   * @param metadataArray Array of extracted Metadata objects.
-   */
-  const handleMetadataExtracted = (metadataArray: Metadata[]) => {
-    console.log('Extracted metadata:', metadataArray);
-    setExtractedMetadata(metadataArray);
-  };
-
-  /**
-   * Handles scroll behavior to show/hide the collapsed header.
-   * @param e UIEvent from the scroll.
-   */
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
     setScrollTop(newScrollTop);
     setShowCollapsedHeader(newScrollTop > 300);
- 
   };
 
-  // Show loading screen if fetching data
   if (loading) {
     return (
       <Flex justify="center" align="center" height="100vh">
@@ -434,36 +182,8 @@ export default function Home() {
       <NewTripModal 
         isOpen={isOpen} 
         onClose={onClose} 
-        onCreateTrip={handleCreateTrip} 
-        onFileChange={handleFileSelection}
-        selectedFiles={selectedFiles}
+        onCreateTrip={handleCreateTrip}
       />
-
-      {/* Optionally, display a spinner or message during metadata extraction */}
-      {isMetadataExtracting && (
-        <Box position="fixed" top="50%" left="50%" transform="translate(-50%, -50%)" bg="white" p={4} borderRadius="md" boxShadow="lg">
-          <Flex align="center">
-            <Spinner size="lg" mr={2} />
-            <Text>Extracting metadata...</Text>
-          </Flex>
-        </Box>
-      )}
-
-      {/* Optionally, display an error message if metadata extraction failed */}
-      {metadataError && (
-        <Box position="fixed" top="10%" left="50%" transform="translateX(-50%)" bg="red.100" p={4} borderRadius="md">
-          <Text color="red.500">Error extracting metadata: {metadataError}</Text>
-        </Box>
-      )}
-
-      {/* ExifMetadataExtractor is no longer needed as extraction is handled within handleCreateTrip */}
-      {/* <ErrorBoundary>
-        <ExifMetadataExtractor
-          files={selectedFiles}
-          imageUrls={imageUrls}
-          onMetadataExtracted={handleMetadataExtracted}
-        />
-      </ErrorBoundary> */}
     </Flex>
   );
 }
