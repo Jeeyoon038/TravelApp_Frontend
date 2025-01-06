@@ -179,14 +179,14 @@ function SortableGroupCard({
       cursor="pointer"
       onClick={() => onSelectGroup(group)}
       transition="transform 0.2s"
-      transform={isSelected ? "scale(1.05)" : "scale(1.0)"}
+      transform={isSelected ? "scale(1.05)" : "scale(0.95)"}
     >
       <Box
         w="120px"
         h="160px"
         borderRadius="12"
         overflow="hidden"
-        boxShadow={isSelected ? "0 0 0 3px #F56565" : "none"}
+        boxShadow={isSelected ? "0 0 0 3px #2196F3" : "none"}
         transition="box-shadow 0.2s, transform 0.2s"
         position="relative"
         bg="gray.100"

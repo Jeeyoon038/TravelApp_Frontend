@@ -1,10 +1,9 @@
-import React from "react";
-import { 
-  Box, 
-  Flex, 
-  Text, 
-  Image, 
-  Button 
+import {
+  Box,
+  Button,
+  Flex,
+  Image,
+  Text
 } from "@chakra-ui/react";
 
 interface HomeHeaderProps {
@@ -35,14 +34,16 @@ export default function HomeHeader({ user, onCreateTrip }: HomeHeaderProps) {
           {user ? "여행을 함께 할 새로운 그룹을 생성하세요." : "로그인 해주세요."}
         </Text>
         <Button
+          ml={2}
           size="sm"
-          bg="white"
           color="blue.500"
-          border="1px"
-          borderColor="blue.500"
-          borderRadius="md"
-          _hover={{ bg: "blue.50", color: "blue.600" }}
-          boxShadow="sm"
+          bg="transparent"
+          px={1}
+          py={2}
+          fontSize="sm"
+          _hover={{ bg: "blue.50" }}
+          _active={{ bg: "blue.500", color: "white" }}
+          boxShadow={"0px 4px 6px rgba(0, 0, 0, 0.1)"}
           onClick={onCreateTrip}
         >
           + New Trip
