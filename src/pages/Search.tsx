@@ -7,7 +7,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  Text,
+  Text
 } from "@chakra-ui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRef, useState } from "react";
@@ -148,7 +148,11 @@ export default function Search() {
         borderBottomRadius={isHeaderCollapsed ? 0 : 10}
         variants={headerVariants}
         animate={isHeaderCollapsed && !isSearchMode ? "collapsed" : "expanded"}
-        boxShadow={"0px 4px 4px rgba(0, 0, 0, 0.10)"}
+        boxShadow={
+          isHeaderCollapsed
+            ? "0px 2px 4px rgba(0, 0, 0, 0.1)"
+            : "0px 4px 6px rgba(0, 0, 0, 0.1)"
+        }
         overflow="hidden"
       >
         <Box
@@ -229,7 +233,7 @@ export default function Search() {
                   placeholder="그룹명으로 검색하기"
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  borderRadius="lg"
+                  borderRadius={10}
                   bg="#f5f5f5"
                   border="none"
                   fontSize="sm"
@@ -253,6 +257,7 @@ export default function Search() {
           "scrollbar-width": "none",
         }}
       >
+        
         {filteredPosts.length > 0 ? (
           <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={2}>
             {filteredPosts.map((post, index) => (
