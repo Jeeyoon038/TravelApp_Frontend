@@ -1,24 +1,23 @@
 // src/pages/Home.tsx
 
-import React, { useState, useRef, useEffect, UIEvent } from "react";
-import { 
-  Flex, 
-  Box, 
-  Spinner, 
-  Text, 
-  useDisclosure, 
-  useToast 
+import {
+  Box,
+  Flex,
+  Spinner,
+  Text,
+  useDisclosure,
+  useToast
 } from "@chakra-ui/react";
 import axios from "axios";
+import { UIEvent, useEffect, useRef, useState } from "react";
 
 import BottomTabBar from "../components/BottomTabBar";
-import HomeHeader from "../components/HomeHeader";
 import GroupStorySection from "../components/GroupStorySection";
+import HomeHeader from "../components/HomeHeader";
 import NewTripModal from "../components/NewTripModal";
-import ErrorBoundary from "../components/ErrorBoundary";
 
 import { Group } from "../types/group";
-import { extractMetadataFromUrls, Metadata } from "../utils/ExifMetadataExtractor";
+import { getPhotoMetadata, Metadata } from "../utils/getPhotoMetadata"; // Updated import
 
 const API_BASE_URL = "http://localhost:3000/";
 
@@ -239,8 +238,8 @@ export default function Home() {
   /**
    * Handles the creation of a new trip.
    * Steps:
-   * 1. Upload selected images.
-   * 2. Extract metadata from uploaded image URLs.
+   * 1. Extract metadata from selected files.
+   * 2. Upload selected images.
    * 3. Create the trip in the backend.
    * 4. Upload metadata for all images.
    * 5. Refresh the group list.
@@ -255,29 +254,15 @@ export default function Home() {
     try {
       console.log("Starting trip creation process with data:", tripData);
       
-      // Step 1: Upload selected images and get their URLs
-      const uploadedImageUrls = await uploadImages(tripData.selectedFiles);
-      setImageUrls(uploadedImageUrls);
-
-      if (!uploadedImageUrls || uploadedImageUrls.length === 0) {
-        toast({
-          title: "No Images Uploaded",
-          description: "Please upload at least one image for the trip.",
-          status: "warning",
-          duration: 3000,
-          isClosable: true,
-        });
-        return;
-      }
-
-      // Step 2: Extract metadata from image URLs
+      // Step 1: Extract metadata from selected files
       setIsMetadataExtracting(true);
       setMetadataError(null);
 
       let metadata: Metadata[] = [];
       try {
-        console.log("Extracting metadata from image URLs...");
-        metadata = await extractMetadataFromUrls(uploadedImageUrls);
+        console.log("Extracting metadata from selected files...");
+        const metadataPromises = tripData.selectedFiles.map((file) => getPhotoMetadata(file));
+        metadata = await Promise.all(metadataPromises);
         setExtractedMetadata(metadata);
         console.log("Metadata extraction completed:", metadata);
       } catch (error: any) {
@@ -295,6 +280,21 @@ export default function Home() {
       }
 
       setIsMetadataExtracting(false);
+
+      // Step 2: Upload selected images and get their URLs
+      const uploadedImageUrls = await uploadImages(tripData.selectedFiles);
+      setImageUrls(uploadedImageUrls);
+
+      if (!uploadedImageUrls || uploadedImageUrls.length === 0) {
+        toast({
+          title: "No Images Uploaded",
+          description: "Please upload at least one image for the trip.",
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
 
       // Step 3: Create the trip in the Trip Database
       console.log("Creating trip in the backend...");
@@ -389,7 +389,7 @@ export default function Home() {
     const newScrollTop = e.currentTarget.scrollTop;
     setScrollTop(newScrollTop);
     setShowCollapsedHeader(newScrollTop > 300);
-    console.log("Scrolled to:", newScrollTop);
+ 
   };
 
   // Show loading screen if fetching data
