@@ -191,7 +191,7 @@ function SortableGroupCard({
         h="160px"
         borderRadius="12"
         overflow="hidden"
-        boxShadow={isSelected ? "0 0 0 3px #F56565" : "none"}
+        boxShadow={isSelected ? "0 0 0 3px rgb(54, 138, 255)" : "none"}
         transition="box-shadow 0.2s, transform 0.2s"
         position="relative"
         bg="gray.100"
