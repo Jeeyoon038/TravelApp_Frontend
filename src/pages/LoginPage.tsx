@@ -1,14 +1,36 @@
-import React, { useState, useEffect } from "react";
+
+import { Box, Button, HStack, Icon, Text, useToast, VStack } from "@chakra-ui/react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, VStack, Text, Box, useToast } from "@chakra-ui/react";
-import { FaGoogle } from "react-icons/fa";
+
+// 구글 공식 SVG 아이콘을 인라인으로 정의
+const GoogleIcon = (props) => (
+  <Icon viewBox="0 0 533.5 544.3" {...props}>
+    <path
+      fill="#4285F4"
+      d="M533.5 278.4c0-17.4-1.5-34-4.4-50.2H272v95.1h146.9c-6.3 34-25 62.8-53.3 82.1v68h86.2c50.4-46.4 79.6-114.6 79.6-194.9z"
+    />
+    <path
+      fill="#34A853"
+      d="M272 544.3c72.8 0 133.8-24.1 178.5-65.3l-86.2-68c-24 16.1-54.6 25.6-92.3 25.6-70.8 0-130.8-47.9-152-112.3H34.3v70.3c45.6 90.3 138.2 152 237.7 152z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M120 324.6c-10.4-30.8-10.4-64.3 0-95.1v-70.3H34.3c-35.1 69.9-35.1 152.4 0 222.3l85.7-70.3z"
+    />
+    <path
+      fill="#EA4335"
+      d="M272 107.7c39.5 0 75.1 13.6 103 40.3l77.2-77.2C403.8 24.1 344.8 0 272 0 172.5 0 80 61.7 34.3 152l85.7 70.3c21.2-64.4 81.2-112.3 152-112.3z"
+    />
+  </Icon>
+);
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const toast = useToast();
 
   useEffect(() => {
-    // Check for access token in URL
+    // URL에서 access token 확인
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get("access_token");
     const email = urlParams.get("email");
@@ -22,10 +44,10 @@ export default function LoginPage() {
       profilePicture
     });
 
-    // Ensure all required parameters are present
+    // 모든 필수 매개변수가 있는지 확인
     if (accessToken && email && name) {
       try {
-        // Save user info to localStorage
+        // 사용자 정보를 localStorage에 저장
         localStorage.setItem("access_token", accessToken);
         localStorage.setItem("user_email", email);
         localStorage.setItem("user_name", name);
@@ -33,19 +55,19 @@ export default function LoginPage() {
           localStorage.setItem("user_profile_picture", profilePicture);
         }
 
-        // Show success toast
+        // 성공 토스트 표시
         toast({
-          title: "Login Successful",
-          description: `Welcome, ${name}!`,
+          title: "로그인 성공",
+          description: `${name}님 환영합니다!`,
           status: "success",
           duration: 3000,
           isClosable: true,
         });
 
-        // Clear URL parameters
+        // URL 매개변수 제거
         window.history.replaceState({}, document.title, "/");
 
-        // Immediately navigate to home
+        // 홈으로 즉시 이동
         navigate("/home", {
           state: {
             user: {
@@ -57,10 +79,10 @@ export default function LoginPage() {
           }
         });
       } catch (error) {
-        console.error("Login processing error:", error);
+        console.error("로그인 처리 오류:", error);
         toast({
-          title: "Login Error",
-          description: "An error occurred during login",
+          title: "로그인 오류",
+          description: "로그인 중 오류가 발생했습니다.",
           status: "error",
           duration: 3000,
           isClosable: true,
@@ -70,8 +92,8 @@ export default function LoginPage() {
   }, [navigate, toast]);
 
   const handleGoogleLogin = () => {
-    // Redirect to backend Google OAuth endpoint
-    console.log("Initiating Google Login");
+    // 백엔드 구글 OAuth 엔드포인트로 리디렉션
+    console.log("구글 로그인 시작");
     window.location.href = "http://localhost:3000/auth/google";
   };
 
@@ -84,26 +106,50 @@ export default function LoginPage() {
       bg="#F2F2F2"
     >
       <Box 
-        p={8} 
+        p={6} 
         borderWidth={1} 
-        borderRadius={8} 
+        borderRadius={10}
         boxShadow="lg" 
         bg="white"
-        width="300px"
+        width="90%"
+        maxW="400px"
+        height="20%"
       >
-        <VStack spacing={4}>
-          <Text fontSize="2xl" textAlign="center">
-            Travel Log Login
+        <VStack spacing={6}>
+          <Text 
+            fontSize="2xl" 
+            textAlign="center" 
+            fontFamily="Roboto, sans-serif"
+            fontWeight="500"
+            mt={2}
+          >
+            Travel Log에 로그인 하세요.
           </Text>
           
           <Button
-            leftIcon={<FaGoogle />}
-            colorScheme="red"
+            onClick={handleGoogleLogin}
             variant="outline"
             width="full"
-            onClick={handleGoogleLogin}
+            height="50px"
+            borderRadius={20}
+            borderColor="gray.300"
+            bg="white"
+            boxShadow= {"0px 4px 4px rgba(0, 0, 0, 0.10)"}
+            _hover={{ bg: 'gray.50' }}
+            _active={{ bg: 'gray.100' }}
+            aria-label="구글로 로그인하기"
           >
-            Sign in with Google
+            <HStack spacing={3}>
+              <GoogleIcon boxSize={5} />
+              <Text 
+                fontSize={16} 
+                fontWeight="500" 
+                color="gray.700"
+                fontFamily="Roboto, sans-serif"
+              >
+                Google 계정으로 로그인 하기
+              </Text>
+            </HStack>
           </Button>
         </VStack>
       </Box>

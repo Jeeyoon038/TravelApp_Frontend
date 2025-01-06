@@ -1,21 +1,20 @@
 // src/pages/Home.tsx
 
-import React, { useState, useRef, useEffect, UIEvent } from "react";
-import { 
-  Flex, 
-  Box, 
-  Spinner, 
-  Text, 
-  useDisclosure, 
-  useToast 
+import {
+  Box,
+  Flex,
+  Spinner,
+  Text,
+  useDisclosure,
+  useToast
 } from "@chakra-ui/react";
 import axios from "axios";
+import { UIEvent, useEffect, useRef, useState } from "react";
 
 import BottomTabBar from "../components/BottomTabBar";
-import HomeHeader from "../components/HomeHeader";
 import GroupStorySection from "../components/GroupStorySection";
+import HomeHeader from "../components/HomeHeader";
 import NewTripModal from "../components/NewTripModal";
-import ErrorBoundary from "../components/ErrorBoundary";
 
 import { Group } from "../types/group";
 import { extractMetadataFromUrls, Metadata } from "../utils/ExifMetadataExtractor";
