@@ -41,8 +41,8 @@ export interface NewTripModalProps {
 }
 
 // 최대 파일 개수와 용량을 상수로 정의
-const MAX_FILES = 10;
-const MAX_SIZE_MB = 5;
+const MAX_FILES = 15;
+const MAX_SIZE_MB = 15;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 const NewTripModal: React.FC<NewTripModalProps> = ({
@@ -297,7 +297,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
       <ModalOverlay />
       <ModalContent borderRadius="xl" bgGradient="linear(to-r, white, #f2f2f2)">
         <ModalHeader textAlign="center" fontSize="2xl" fontWeight="bold">
-          새로운 여행을 시작하세요
+          여행 기록을 시작해보세요!
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
@@ -326,7 +326,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                   </FormLabel>
                   <Input
                     name="title"
-                    placeholder="여행을 떠날 그룹 이름을 지어주세요"
+                    placeholder="그룹의 이름을 입력해주세요"
                     value={newTrip.title}
                     onChange={handleInputChange}
                     borderRadius="md"
@@ -341,7 +341,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                 {/* 사진 업로드 */}
                 <FormControl isRequired isDisabled={isUploading}>
                   <FormLabel fontWeight="600" color="gray.700">
-                    사진 업로드 하기
+                    사진 업로드
                   </FormLabel>
                   <Box
                     {...getRootProps()}
@@ -362,8 +362,9 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                     ) : (
                       <>
                         <Text color="gray.500">
-                          이곳을 클릭하거나 Drag & Drop 하세요
+                          사진을 선택하거나 Drag & Drop 하세요
                         </Text>
+                        
                         <Text color="gray.400" fontSize="sm">
                           (최대 {MAX_FILES}개, 각 파일 최대 {MAX_SIZE_MB}MB)
                         </Text>
@@ -429,7 +430,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                 {/* 여행 첫 날 */}
                 <FormControl isRequired isDisabled={isUploading}>
                   <FormLabel fontWeight="600" color="gray.700">
-                    여행 첫 날
+                    여행 시작 날짜
                   </FormLabel>
                   <Input
                     name="start_date"
@@ -448,7 +449,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                 {/* 여행 마지막 날 */}
                 <FormControl isRequired isDisabled={isUploading}>
                   <FormLabel fontWeight="600" color="gray.700">
-                    여행 마지막 날
+                    여행 종료 날짜
                   </FormLabel>
                   <Input
                     name="end_date"
@@ -474,7 +475,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                     loadingText="생성 중"
                     borderRadius="md"
                   >
-                    여행 시작 하기
+                    여행 기록 생성
                   </Button>
                   <Button
                     onClick={onClose}

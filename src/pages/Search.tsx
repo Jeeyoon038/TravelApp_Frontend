@@ -26,7 +26,12 @@ export default function Search() {
       profileImage: "/images/image2.jpg",
       username: "jeeyoon38",
       location: "아테네",
-      images: ["/images/image2.jpg", "/images/image3.jpg","/images/image2.jpg", "/images/image3.jpg"],
+      images: [
+        "/images/image2.jpg",
+        "/images/image3.jpg",
+        "/images/image2.jpg",
+        "/images/image3.jpg",
+      ],
     },
     {
       profileImage: "/images/image2.jpg",
@@ -43,7 +48,9 @@ export default function Search() {
   ];
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPost, setSelectedPost] = useState<typeof posts[0] | null>(null);
+  const [selectedPost, setSelectedPost] = useState<typeof posts[0] | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
@@ -88,6 +95,7 @@ export default function Search() {
     post.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // =================== Framer Motion Variants ===================
   const headerVariants = {
     expanded: {
       height: "120px",
@@ -110,18 +118,15 @@ export default function Search() {
     },
   };
 
+  // IMPORTANT: Removed `position: "absolute"`, `top`, `transform` from "visible"
+  // to fix TypeScript errors and keep the search bar in place.
   const searchBarVariants = {
     visible: {
       opacity: 1,
-      width: "100%",
-      position: "absolute",
-      top: "60%",
-      transform: "translateY(-50%)",
       transition: { type: "spring", stiffness: 300, damping: 30 },
     },
     hidden: {
       opacity: 0,
-      height: 0,
       transition: { type: "spring", stiffness: 300, damping: 30 },
     },
   };
@@ -140,6 +145,7 @@ export default function Search() {
 
   return (
     <Box h="100vh" display="flex" flexDirection="column" bg="#f5f5f5">
+      {/* ======================= HEADER ======================= */}
       <MotionBox
         position="sticky"
         top="0"
@@ -164,9 +170,7 @@ export default function Search() {
         >
           <MotionText
             variants={titleVariants}
-            animate={
-              isHeaderCollapsed && !isSearchMode ? "collapsed" : "expanded"
-            }
+            animate={isHeaderCollapsed && !isSearchMode ? "collapsed" : "expanded"}
             fontWeight="bold"
           >
             {!isSearchMode && "여행 일지 둘러보기"}
@@ -230,7 +234,7 @@ export default function Search() {
                 </InputLeftElement>
                 <Input
                   type="text"
-                  placeholder="그룹명으로 검색하기"
+                  placeholder="그룹 이름을 입력하세요"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   borderRadius={10}
@@ -245,7 +249,9 @@ export default function Search() {
           )}
         </AnimatePresence>
       </MotionBox>
+      {/* ======================= END HEADER ======================= */}
 
+      {/* ======================= CONTENT (Scrolling) ======================= */}
       <Box
         flex="1"
         overflowY="auto"
@@ -257,7 +263,6 @@ export default function Search() {
           "scrollbar-width": "none",
         }}
       >
-        
         {filteredPosts.length > 0 ? (
           <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={2}>
             {filteredPosts.map((post, index) => (
@@ -279,7 +284,7 @@ export default function Search() {
         )}
       </Box>
 
-      
+      {/* ======================= BOTTOM TAB & MODAL ======================= */}
       <Box>
         <BottomTabBar />
       </Box>
@@ -289,7 +294,6 @@ export default function Search() {
         onClose={handleCloseModal}
         post={selectedPost}
       />
-      
     </Box>
   );
 }

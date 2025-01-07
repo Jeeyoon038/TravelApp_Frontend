@@ -8,6 +8,7 @@ import PhotoDetailPage from './pages/PhotoDetailPage';
 import Search from './pages/Search';
 import SearchResultPage from './pages/SearchResultPage';
 import LoginPage from './pages/LoginPage';
+import customTheme from './theme';
 
 interface User {
   access_token: string;
@@ -49,7 +50,7 @@ export default function App() {
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
-      <ChakraProvider>
+      <ChakraProvider >
         <LoadScript 
           googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} 
           loadingElement={<div>Loading...</div>}

@@ -65,42 +65,42 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
       <Text fontWeight="bold" fontSize={24} mb={3}>
         My Travel Log
       </Text>
-
+ 
       <Flex alignItems="center">
-        {userData ? (
-          <ProfileImage 
-            user={userData} 
-            size={40} 
-            onClick={onOpen}
-          />
-        ) : (
-          <GoogleProfile />
-        )}
+  {userData ? (
+    <ProfileImage 
+      user={userData} 
+      size={40} 
+      onClick={onOpen}
+    />
+  ) : (
+    <GoogleProfile />
+  )}
 
-        <Text fontWeight={500} fontSize="s" ml={3} mr={2}>
-          {userData?.displayName
-            ? `${userData.displayName}, Add Your Travel Story`
-            : "Please Sign In to Continue"}
-        </Text>
+  <Text  fontSize="md" ml={3}>
+    {userData?.displayName && `${userData.displayName}`}
+  </Text>
 
-        <Button
-            ml="auto"  // Changed from ml={2} to ml="auto" to push it to the right
-            mr={4}     // Added margin-right for some spacing from the edge
-            size="sm"
-            color="blue.500"
-            bg="transparent"
-            p={2}
-            minW="32px"
-            h="32px"
-            _hover={{ bg: "blue.50" }}
-            _active={{ bg: "blue.500", color: "white" }}
-            boxShadow={"0px 4px 6px rgba(0, 0, 0, 0.1)"}
-            onClick={onCreateTrip}
-            borderRadius="full"
-          >
-            <Icon as={AddIcon} boxSize={4} />
-          </Button>
-      </Flex>
+  <Button
+    ml="auto"  // This will push the button to the right
+    size="sm" 
+    color="blue.500"
+    bg="transparent"
+    px={3}
+    py={1}
+    _hover={{ bg: "blue.50" }}
+    _active={{ bg: "blue.500", color: "white" }}
+    onClick={onCreateTrip}
+    borderRadius="lg"
+    border="0.5px solid"
+    fontSize="sm"
+    display="flex"
+    alignItems="center"
+  >
+    <Icon as={AddIcon} boxSize={3} mr={1} />
+    Add Your Story
+  </Button>
+</Flex>
 
       {userData && (
         <Modal isOpen={isOpen} onClose={onClose} isCentered>

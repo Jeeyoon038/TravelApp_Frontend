@@ -19,8 +19,8 @@ const colors = {
 const customTheme = extendTheme({
   colors,
   fonts: {
-    heading: "'Inter', sans-serif",
-    body: "'Inter', sans-serif",
+    heading: "'M PLUS Rounded 1c','Nanum Gothic Coding',sans-serif",
+    body: "'M PLUS Rounded 1c','Nanum Gothic Coding',sans-serif",
   },
 });
 
