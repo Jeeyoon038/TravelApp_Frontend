@@ -250,6 +250,7 @@ export default function Home() {
     start_date: string;
     end_date: string;
     selectedFiles: File[];
+    created_by: string;
   }) => {
     try {
       console.log("Starting trip creation process with data:", tripData);
@@ -305,7 +306,8 @@ export default function Home() {
           start_date: new Date(tripData.start_date).toISOString(),
           end_date: new Date(tripData.end_date).toISOString(),
           image_urls: uploadedImageUrls,
-          member_google_ids: [],
+          member_google_ids: [tripData.created_by],
+          created_by: tripData.created_by,
         }),
       });
 

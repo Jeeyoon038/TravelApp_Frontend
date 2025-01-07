@@ -7,6 +7,7 @@ export interface Group {
   member_google_ids: string[];
   createdAt: string;
   updatedAt: string;
+  
   trip_id: number;
   __v: number;
 }

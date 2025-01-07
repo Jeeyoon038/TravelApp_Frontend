@@ -1,35 +1,40 @@
-//HomeHeader.tsx
-import { Box, Button, Flex, Text, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, useDisclosure } from "@chakra-ui/react";
+// HomeHeader.tsx
+import { Box, Button, Flex, Text, Modal, ModalOverlay, ModalContent, 
+  ModalHeader, ModalBody, ModalCloseButton, useDisclosure, 
+  Icon} from "@chakra-ui/react";
 import GoogleProfile from "./GoogleProfile";
+import ProfileImage from "./ProfileImage";
 import { useEffect, useState } from "react";
-
 import { useNavigate } from "react-router-dom";
+import { UserProfile } from "./ProfileImage";
+import { AddIcon } from "@chakra-ui/icons";
 
 interface HomeHeaderProps {
   onCreateTrip: () => void;
 }
 
-interface UserData {
-  displayName: string;
-  photo: string;
-}
-
 export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
+      // Clear all local storage items
       localStorage.clear();
+      
+      // Reset user data state
       setUserData(null);
+      
+      // Close the modal
       onClose();
-      navigate('/'); // This will redirect to login page
+      
+      // Navigate to root (login) page
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('Error during logout:', error);
     }
   };
-
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -37,23 +42,23 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
         const storedName = localStorage.getItem('user_name');
         const storedPhoto = localStorage.getItem('user_photo');
         
-        console.log('Stored data:', { storedName, storedPhoto }); // Debug log
-
         if (storedName && storedPhoto) {
           setUserData({
             displayName: storedName,
             photo: storedPhoto
           });
+        } else {
+          // If no user data is found, redirect to login
+          navigate('/', { replace: true });
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        navigate('/', { replace: true });
       }
     };
 
     fetchUserData();
-  }, []);
-
-  
+  }, [navigate]);
 
   return (
     <Box bg="white" boxShadow="md" borderTopRadius={0} borderBottomRadius={10} p={4}>
@@ -62,54 +67,42 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
       </Text>
 
       <Flex alignItems="center">
-        <Box 
-          boxSize="45px" 
-          borderRadius="full" 
-          overflow="hidden" 
-          mr={4}
-          cursor={userData ? "pointer" : "default"}
-          onClick={userData ? onOpen : undefined}
-        >
-          {userData?.photo ? (
-            <img
-              src={userData.photo}
-              alt="Profile"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '0%'
-              }}
-            />
-          ) : (
-            <GoogleProfile />
-          )}
-        </Box>
+        {userData ? (
+          <ProfileImage 
+            user={userData} 
+            size={40} 
+            onClick={onOpen}
+          />
+        ) : (
+          <GoogleProfile />
+        )}
 
-        <Text fontWeight={500} fontSize="sm" mr={2}>
+        <Text fontWeight={500} fontSize="s" ml={3} mr={2}>
           {userData?.displayName
-            ? `${userData.displayName}님, 여행을 함께 할 새로운 그룹을 생성하세요.`
-            : "로그인 해주세요."}
+            ? `${userData.displayName}, Add Your Travel Story`
+            : "Please Sign In to Continue"}
         </Text>
 
         <Button
-          ml={2}
-          size="sm"
-          color="blue.500"
-          bg="transparent"
-          px={1}
-          py={2}
-          fontSize="sm"
-          _hover={{ bg: "blue.50" }}
-          _active={{ bg: "blue.500", color: "white" }}
-          boxShadow={"0px 4px 6px rgba(0, 0, 0, 0.1)"}
-          onClick={onCreateTrip}
-        >
-          + New Trip
-        </Button>
+            ml="auto"  // Changed from ml={2} to ml="auto" to push it to the right
+            mr={4}     // Added margin-right for some spacing from the edge
+            size="sm"
+            color="blue.500"
+            bg="transparent"
+            p={2}
+            minW="32px"
+            h="32px"
+            _hover={{ bg: "blue.50" }}
+            _active={{ bg: "blue.500", color: "white" }}
+            boxShadow={"0px 4px 6px rgba(0, 0, 0, 0.1)"}
+            onClick={onCreateTrip}
+            borderRadius="full"
+          >
+            <Icon as={AddIcon} boxSize={4} />
+          </Button>
       </Flex>
 
-      {userData && (  // Only render modal if userData exists
+      {userData && (
         <Modal isOpen={isOpen} onClose={onClose} isCentered>
           <ModalOverlay />
           <ModalContent>
@@ -117,26 +110,11 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
             <ModalCloseButton />
             <ModalBody pb={6}>
               <Flex direction="column" alignItems="center">
-                <Box 
-                  boxSize="100px" 
-                  borderRadius="full" 
-                  overflow="hidden" 
-                  mb={4}
-                >
-                  {userData.photo && (
-                    <img
-                      src={userData.photo}
-                      alt="Profile"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        borderRadius: '50%'
-                      }}
-                    />
-                  )}
-                </Box>
-                <Text fontSize="lg" fontWeight="bold" mb={4}>
+                <ProfileImage 
+                  user={userData}
+                  size={100}
+                />
+                <Text fontSize="lg" fontWeight="bold" my={4}>
                   {userData.displayName}
                 </Text>
                 <Button 
