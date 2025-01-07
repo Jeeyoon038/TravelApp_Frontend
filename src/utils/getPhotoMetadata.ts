@@ -152,7 +152,7 @@ function getMimeType(buffer: ArrayBuffer): string | undefined {
   }
 
   // HEIC/HEIF: 'ftypheic' 또는 'ftypheix' 등으로 시작
-  const signature = String.fromCharCode.apply(null, new Uint8Array(buffer.slice(4, 12)));
+  const signature = String.fromCharCode.apply(null, [...new Uint8Array(buffer.slice(4, 12))]);
   if (
     signature.startsWith("ftypheic") ||
     signature.startsWith("ftypheix") ||
@@ -236,7 +236,7 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
     // (C) EXIF 파싱
     const exifMetadata = await exifr.parse(arrayBuffer, {
       tiff: true,
-      ifd0: true,
+      ifd0: {},
       exif: true,
       gps: true,
       xmp: true,

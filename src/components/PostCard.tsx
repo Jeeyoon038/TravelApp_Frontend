@@ -16,16 +16,24 @@ interface PostCardProps {
   username: string;
   location: string;
   images: string[];
-  onClick: () => void; // 클릭 이벤트 핸들러
+  //onClick: () => void; // 클릭 이벤트 핸들러
 }
 
 const MotionBox = motion(Box);
 
-const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images, onClick }) => {
+const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images }) => {
   const [imageMetadata, setImageMetadata] = useState<PhotoMetadata>({
-    date: null,
+    date:  null,
     latitude: null,
-    longitude: null,
+  longitude: null,
+
+  country: null,  // 역지오코딩 결과
+  city: null,
+  state: null,
+  postalCode:  null,
+  street: null,
+  displaySrc: "",  // (HEIC 변환 시 사용) 최종 표시용 이미지 URL
+
   });
 
   useEffect(() => {
@@ -53,7 +61,7 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images,
       cursor="pointer"
       whileHover={{ scale: 1.02, boxShadow: "lg" }}
       whileTap={{ scale: 0.98 }}
-      onClick={onClick} // 클릭 시 부모에게 전달
+      //onClick={onClick} // 클릭 시 부모에게 전달
     >
       {/* 프로필 및 위치 */}
       <Flex alignItems="center" mb={4}>

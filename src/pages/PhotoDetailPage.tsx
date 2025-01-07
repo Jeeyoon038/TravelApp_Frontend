@@ -20,7 +20,7 @@ export default function PhotoDetailPage() {
 
   const [processedSrc, setProcessedSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   useEffect(() => {
     if (!photo) {
@@ -28,7 +28,7 @@ export default function PhotoDetailPage() {
       return;
     }
 
-    const { displaySrc, originalSrc } = photo;
+    const { displaySrc } = photo;
 
     // 이미 GroupGallery에서 HEIC 이미지를 변환했으므로, 추가 변환은 필요하지 않습니다.
     setProcessedSrc(displaySrc);

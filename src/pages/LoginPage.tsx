@@ -1,6 +1,6 @@
 
 //LoginPage.tsx
-import { Box, Button, HStack, Icon, IconProps, Text, useToast, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, IconProps, Text,  VStack } from "@chakra-ui/react";
 import { SVGProps, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { JSX } from "react/jsx-runtime";
@@ -29,7 +29,7 @@ const GoogleIcon = (props: JSX.IntrinsicAttributes & Omit<SVGProps<SVGSVGElement
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const toast = useToast();
+  //const toast = useToast();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

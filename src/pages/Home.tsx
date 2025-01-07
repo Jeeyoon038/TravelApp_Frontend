@@ -9,7 +9,7 @@ import {
   useToast
 } from "@chakra-ui/react";
 import axios from "axios";
-import { UIEvent, useEffect, useRef, useState } from "react";
+import { UIEvent, useEffect, useState } from "react";
 
 import BottomTabBar from "../components/BottomTabBar";
 import GroupStorySection from "../components/GroupStorySection";
@@ -22,10 +22,10 @@ import { extractMetadataFromUrls, Metadata } from "../utils/ExifMetadataExtracto
 const API_BASE_URL = "http://localhost:3000/";
 
 // Assuming you have a user object or context
-const user = {
-  profilePicture: "", // Replace with actual user profile picture
-  name: "User" // Replace with actual user name
-};
+// const user = {
+//   profilePicture: "", // Replace with actual user profile picture
+//   name: "User" // Replace with actual user name
+// };
 
 export default function Home() {
   // State Hooks - Consistently ordered at the top
@@ -33,15 +33,18 @@ export default function Home() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [showCollapsedHeader, setShowCollapsedHeader] = useState<boolean>(false);
-  const [scrollTop, setScrollTop] = useState<number>(0);
+  const [, setScrollTop] = useState<number>(0);
+const handleScrollPosition = (position: number) => {
+  setScrollTop(position);
+};
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [extractedMetadata, setExtractedMetadata] = useState<Metadata[]>([]);
+  const [, setImageUrls] = useState<string[]>([]);
+  const [, setExtractedMetadata] = useState<Metadata[]>([]);
   const [isMetadataExtracting, setIsMetadataExtracting] = useState<boolean>(false);
   const [metadataError, setMetadataError] = useState<string | null>(null);
 
   // Ref Hooks
-  const bigHeaderRef = useRef<HTMLDivElement>(null);
+  //const bigHeaderRef = useRef<HTMLDivElement>(null);
 
   // Chakra UI and other third-party hooks
   const toast = useToast();
@@ -62,13 +65,17 @@ export default function Home() {
       console.log("Fetching groups from backend...");
       const response = await axios.get(`${API_BASE_URL}trips`);
       console.log("Groups fetched successfully:", response.data);
-      const fetchedGroups: Group[] = response.data.map((trip: any) => ({
+      const fetchedGroups: Group[] = (response.data as any[]).map((trip: any) => ({
+        _id: trip._id,
         trip_id: trip.trip_id,
         title: trip.title,
         start_date: new Date(trip.start_date),
         end_date: new Date(trip.end_date),
         image_urls: trip.image_urls || [],
         member_google_ids: trip.member_google_ids || [],
+        createdAt: new Date(trip.createdAt).toISOString(),
+        updatedAt: new Date(trip.updatedAt).toISOString(),
+        __v: trip.__v,
       }));
 
       setGroups(fetchedGroups);
@@ -250,7 +257,9 @@ export default function Home() {
     start_date: string;
     end_date: string;
     selectedFiles: File[];
-    created_by: string;
+    //created_by: string;
+
+ 
   }) => {
     try {
       console.log("Starting trip creation process with data:", tripData);
@@ -306,8 +315,8 @@ export default function Home() {
           start_date: new Date(tripData.start_date).toISOString(),
           end_date: new Date(tripData.end_date).toISOString(),
           image_urls: uploadedImageUrls,
-          member_google_ids: [tripData.created_by],
-          created_by: tripData.created_by,
+          member_google_ids: [],
+          //created_by: tripData.created_by,
         }),
       });
 
@@ -377,10 +386,10 @@ export default function Home() {
    * Not used currently as extraction is handled within handleCreateTrip.
    * @param metadataArray Array of extracted Metadata objects.
    */
-  const handleMetadataExtracted = (metadataArray: Metadata[]) => {
-    console.log('Extracted metadata:', metadataArray);
-    setExtractedMetadata(metadataArray);
-  };
+  // const handleMetadataExtracted = (metadataArray: Metadata[]) => {
+  //   console.log('Extracted metadata:', metadataArray);
+  //   setExtractedMetadata(metadataArray);
+  // };
 
   /**
    * Handles scroll behavior to show/hide the collapsed header.
@@ -388,9 +397,8 @@ export default function Home() {
    */
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     const newScrollTop = e.currentTarget.scrollTop;
-    setScrollTop(newScrollTop);
+    handleScrollPosition(newScrollTop);
     setShowCollapsedHeader(newScrollTop > 300);
-    //console.log("Scrolled to:", newScrollTop);
   };
 
   // Show loading screen if fetching data
@@ -468,3 +476,23 @@ export default function Home() {
     </Flex>
   );
 }
+
+// function setImageUrls(uploadedImageUrls: string[]) {
+//   throw new Error("Function not implemented.");
+// }
+
+// function setExtractedMetadata(_metadata: Metadata[]) {
+//   throw new Error("Function not implemented.");
+// }
+
+// function setImageUrls(_uploadedImageUrls: string[]) {
+//   throw new Error("Function not implemented.");
+// }
+// function setImageUrls(uploadedImageUrls: string[]) {
+//   throw new Error("Function not implemented.");
+// }
+
+// function setExtractedMetadata(metadata: Metadata[]) {
+//   throw new Error("Function not implemented.");
+// }
+

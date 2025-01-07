@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { ChakraProvider } from '@chakra-ui/react';
 import { LoadScript } from '@react-google-maps/api';
@@ -8,14 +8,13 @@ import PhotoDetailPage from './pages/PhotoDetailPage';
 import Search from './pages/Search';
 import SearchResultPage from './pages/SearchResultPage';
 import LoginPage from './pages/LoginPage';
-import customTheme from './theme';
 
-interface User {
-  access_token: string;
-  email: string;
-  name: string;
-  profilePicture: string;
-}
+// interface User {
+//   access_token: string;
+//   email: string;
+//   name: string;
+//   profilePicture: string;
+// }
 
 // Move ProtectedRoute outside of the App component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -25,21 +24,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(() => {
-    const accessToken = localStorage.getItem('access_token');
-    const email = localStorage.getItem('user_email');
-    const name = localStorage.getItem('user_name');
-    const profilePicture = localStorage.getItem('user_photo'); // Changed to match other components
-
-    return accessToken && email && name
-      ? {
-          access_token: accessToken,
-          email,
-          name,
-          profilePicture: profilePicture || '/images/default-profile.jpg'
-        }
-      : null;
-  });
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
