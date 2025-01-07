@@ -61,7 +61,8 @@ export default function LoginPage() {
   const handleGoogleLogin = () => {
     // 백엔드 구글 OAuth 엔드포인트로 리디렉션
     console.log("Starting Google Login");
-    window.location.href = "${process.env.VITE_API_URL}/auth/google";
+    const apiUrl = import.meta.env.VITE_API_URL;
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (

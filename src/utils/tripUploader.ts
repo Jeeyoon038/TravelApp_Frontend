@@ -4,7 +4,10 @@ import axios from "axios";
 const sendTripToBackend = async (tripData: { groupId: string;  title: string; startDate: string; endDate: string }) => {
   try {
     // POST 요청으로 trip 정보를 백엔드로 보냄
-    const response = await axios.post("${process.env.VITE_API_URL}/api/trips", {
+
+    const apiUrl = import.meta.env.VITE_API_URL;
+
+    const response = await axios.post(`${apiUrl}/api/trips`, {
       group_id: tripData.groupId,
       title: tripData.title,
       start_date: tripData.startDate,
