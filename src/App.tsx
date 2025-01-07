@@ -1,3 +1,4 @@
+//App.tsx
 import { ChakraProvider } from '@chakra-ui/react';
 import { LoadScript } from '@react-google-maps/api';
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -21,7 +22,7 @@ import SearchResultPage from './pages/SearchResultPage';
 // Move ProtectedRoute outside of the App component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = localStorage.getItem('user_email');
-  console.log('Auth status:', isAuthenticated); // Debug log
+  //console.log('Auth status:', isAuthenticated); // Debug log
   return isAuthenticated ? children : <Navigate to="/" />;
 };
 
