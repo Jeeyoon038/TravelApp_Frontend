@@ -17,7 +17,7 @@ import AddImagesModal from "./AddImageModal";
 import AddMemberModal from "./AddMemberModal"; // <-- Import your member modal here
 import GroupGallery from "./GroupGallery";
 
-const API_BASE_URL = "https://thisis.travelbackend.monster/";
+const API_BASE_URL = "${process.env.VITE_API_URL}/";
 const MotionBox = motion(Box);
 const MotionImage = motion(ChakraImage);
 const MotionHeader = motion(Box);
