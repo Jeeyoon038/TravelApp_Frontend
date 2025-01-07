@@ -1,10 +1,12 @@
 
-import { Box, Button, HStack, Icon, Text, useToast, VStack } from "@chakra-ui/react";
-import { useEffect } from "react";
+//LoginPage.tsx
+import { Box, Button, HStack, Icon, IconProps, Text, useToast, VStack } from "@chakra-ui/react";
+import { SVGProps, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { JSX } from "react/jsx-runtime";
 
 // 구글 공식 SVG 아이콘을 인라인으로 정의
-const GoogleIcon = (props) => (
+const GoogleIcon = (props: JSX.IntrinsicAttributes & Omit<SVGProps<SVGSVGElement>, "as" | "translate" | keyof IconProps> & { htmlTranslate?: "yes" | "no" | undefined; } & IconProps & { as?: "svg" | undefined; }) => (
   <Icon viewBox="0 0 533.5 544.3" {...props}>
     <path
       fill="#4285F4"
@@ -30,70 +32,32 @@ export default function LoginPage() {
   const toast = useToast();
 
   useEffect(() => {
-    // URL에서 access token 확인
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get("access_token");
-    const email = urlParams.get("email");
-    const name = urlParams.get("name");
-    const profilePicture = urlParams.get("profile_picture");
-
-    console.log('Login Page - Received Parameters:', {
-      accessToken,
-      email,
-      name,
-      profilePicture
-    });
-
-    // 모든 필수 매개변수가 있는지 확인
-    if (accessToken && email && name) {
-      try {
-        // 사용자 정보를 localStorage에 저장
-        localStorage.setItem("access_token", accessToken);
-        localStorage.setItem("user_email", email);
-        localStorage.setItem("user_name", name);
-        if (profilePicture) {
-          localStorage.setItem("user_profile_picture", profilePicture);
-        }
-
-        // 성공 토스트 표시
-        toast({
-          title: "로그인 성공",
-          description: `${name}님 환영합니다!`,
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-
-        // URL 매개변수 제거
-        window.history.replaceState({}, document.title, "/");
-
-        // 홈으로 즉시 이동
-        navigate("/home", {
-          state: {
-            user: {
-              access_token: accessToken,
-              email,
-              name,
-              profilePicture
-            }
-          }
-        });
-      } catch (error) {
-        console.error("로그인 처리 오류:", error);
-        toast({
-          title: "로그인 오류",
-          description: "로그인 중 오류가 발생했습니다.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email');
+    const name = params.get('name');
+    const photo = params.get('photo');
+  
+    console.log('LoginPage: Parameters:', { email, name, photo });
+  
+    if (email && name && photo) {
+      localStorage.setItem('user_email', email);
+      localStorage.setItem('user_name', name);
+      localStorage.setItem('user_photo', photo);
+      console.log('LoginPage: Data saved to localStorage');
+      navigate('/home');
+    } else {
+      // Check if already logged in
+      const storedEmail = localStorage.getItem('user_email');
+      if (storedEmail) {
+        console.log('LoginPage: Found existing login');
+        navigate('/home');
       }
     }
-  }, [navigate, toast]);
+  }, [navigate]);
 
   const handleGoogleLogin = () => {
     // 백엔드 구글 OAuth 엔드포인트로 리디렉션
-    console.log("구글 로그인 시작");
+    console.log("Starting Google Login");
     window.location.href = "http://localhost:3000/auth/google";
   };
 
@@ -123,7 +87,7 @@ export default function LoginPage() {
             fontWeight="500"
             mt={2}
           >
-            Travel Log에 로그인 하세요.
+           Login to Travel Log
           </Text>
           
           <Button
