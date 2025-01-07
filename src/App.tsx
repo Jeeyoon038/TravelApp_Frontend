@@ -4,11 +4,13 @@ import { LoadScript } from '@react-google-maps/api';
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import React from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import DiaryTab from "./pages/DiaryTab"; // 새로 추가한 DiaryTab
 import Home from './pages/Home';
 import LoginPage from './pages/LoginPage';
 import PhotoDetailPage from './pages/PhotoDetailPage';
 import Search from './pages/Search';
 import SearchResultPage from './pages/SearchResultPage';
+
 
 
 
@@ -81,6 +83,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <SearchResultPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/diary" 
+                element={
+                  <ProtectedRoute>
+                    <DiaryTab />
                   </ProtectedRoute>
                 } 
               />

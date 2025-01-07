@@ -11,11 +11,13 @@ import {
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FiPlus } from "react-icons/fi";
+import GroupLocationList from "../components/GroupLocationList";
 import { Group } from "../types/group";
 import { processFiles } from "../utils/heicToJpg";
 import AddImagesModal from "./AddImageModal";
 import AddMemberModal from "./AddMemberModal"; // <-- Import your member modal here
 import GroupGallery from "./GroupGallery";
+
 
 const apiUrl = import.meta.env.VITE_API_URL;
 const API_BASE_URL = `${apiUrl}/`;
@@ -437,6 +439,8 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
       <Box mb={10} />
       <GroupGallery group={group} isHeaderCollapsed={isHeaderCollapsed} />
       <Box mb={100} />
+      <GroupLocationList group={group} />
+
 
       {/* 1) Modal for uploading images */}
       <AddImagesModal

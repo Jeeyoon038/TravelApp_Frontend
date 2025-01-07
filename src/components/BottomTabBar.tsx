@@ -10,7 +10,7 @@ export default function BottomTabBar() {
   const tabs = [
     { label: "홈", icon: <FiHome />, path: "/home" },
     { label: "검색", icon: <FiSearch />, path: "/search" },
-    { label: "프로필", icon: <FiUser />, path: "/profile" },
+    { label: "프로필", icon: <FiUser />, path: "/diary" },
   ];
 
   return (

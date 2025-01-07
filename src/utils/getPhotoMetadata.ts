@@ -24,6 +24,7 @@ export interface PhotoMetadata {
   street: string | null;
 
   displaySrc: string;        // (HEIC 변환 시 사용) 최종 표시용 이미지 URL
+  
 }
 
 // -----------------------------------
@@ -45,7 +46,7 @@ const geocodeCache: {
 } = {};
 
 // -----------------------------------
-// 4) reverseGeocode 함수
+// 4) reverseGeocode 함수 수정
 // -----------------------------------
 async function reverseGeocode(
   lat: number,
@@ -56,14 +57,17 @@ async function reverseGeocode(
   state: string | null;
   postalCode: string | null;
   street: string | null;
+  neighborhood: string | null; // 추가
+  village: string | null;      // 추가 (리)
+  township: string | null;     // 추가 (읍/면)
 }> {
-  const key = `${lat.toFixed(5)},${lng.toFixed(5)}`; // 소수점 5자리까지 키 생성
+  const key = `${lat.toFixed(5)},${lng.toFixed(5)}`;
 
   if (geocodeCache[key]) {
-    return geocodeCache[key];
+    return { ...geocodeCache[key], neighborhood: null, village: null, township: null };
   }
 
-  const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_GEOCODING_API_KEY}`;
+  const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_GEOCODING_API_KEY}&language=ko`;
 
   try {
     const response = await fetch(geocodeUrl);
@@ -74,7 +78,16 @@ async function reverseGeocode(
     const data = await response.json();
     if (data.status === "ZERO_RESULTS") {
       console.warn(`Geocoding API에서 좌표 (${lat}, ${lng})에 대한 결과가 없습니다.`);
-      return { country: null, city: null, state: null, postalCode: null, street: null };
+      return { 
+        country: null, 
+        city: null, 
+        state: null, 
+        postalCode: null, 
+        street: null,
+        neighborhood: null,
+        village: null,
+        township: null,
+      };
     }
     if (data.status !== "OK" || data.results.length === 0) {
       throw new Error(`Geocoding API 오류 상태: ${data.status}`);
@@ -87,6 +100,9 @@ async function reverseGeocode(
     let state: string | null = null;
     let postalCode: string | null = null;
     let street: string | null = null;
+    let neighborhood: string | null = null; // 추가
+    let village: string | null = null;      // 추가
+    let township: string | null = null;     // 추가
 
     for (const component of addressComponents) {
       if (component.types.includes("country")) {
@@ -108,15 +124,43 @@ async function reverseGeocode(
       if (component.types.includes("route")) {
         street = component.long_name;
       }
+
+      // 한국 특유의 주소 컴포넌트 처리
+      if (component.types.includes("neighborhood")) {
+        neighborhood = component.long_name;
+      }
+      if (component.types.includes("sublocality_level_1")) { // 'dong' 대응
+        neighborhood = component.long_name;
+      }
+      if (component.types.includes("sublocality_level_2")) { // 'ri' 대응
+        village = component.long_name;
+      }
+      if (component.types.includes("sublocality_level_3")) { // 'eup/myeon' 대응
+        township = component.long_name;
+      }
     }
 
     geocodeCache[key] = { country, city, state, postalCode, street };
-    return { country, city, state, postalCode, street };
+    return { country, city, state, postalCode, street, neighborhood, village, township };
   } catch (error) {
     console.error("역지오코딩 에러:", error);
-    // 오류가 나면 캐시에 null로 저장
-    geocodeCache[key] = { country: null, city: null, state: null, postalCode: null, street: null };
-    return { country: null, city: null, state: null, postalCode: null, street: null };
+    geocodeCache[key] = { 
+      country: null, 
+      city: null, 
+      state: null, 
+      postalCode: null, 
+      street: null 
+    };
+    return { 
+      country: null, 
+      city: null, 
+      state: null, 
+      postalCode: null, 
+      street: null,
+      neighborhood: null,
+      village: null,
+      township: null,
+    };
   }
 }
 
@@ -167,7 +211,7 @@ function getMimeType(buffer: ArrayBuffer): string | undefined {
 }
 
 // -----------------------------------
-// 7) getPhotoMetadata 함수
+// 7) getPhotoMetadata 함수 수정
 //    - (1) ArrayBuffer 로드 + MIME 식별
 //    - (2) HEIC → JPEG 변환 (필요 시)
 //    - (3) EXIF 파싱
@@ -260,6 +304,9 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
     let state: string | null = null;
     let postalCode: string | null = null;
     let street: string | null = null;
+    let neighborhood: string | null = null; // 추가
+    let village: string | null = null;      // 추가
+    let township: string | null = null;     // 추가
 
     if (latitude && longitude) {
       const location = await reverseGeocode(latitude, longitude);
@@ -268,9 +315,12 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
       state = location.state;
       postalCode = location.postalCode;
       street = location.street;
+      neighborhood = location.neighborhood; // 추가
+      village = location.village;           // 추가
+      township = location.township;         // 추가
     }
 
-    // (E) 만약 이미 JPEG였다면 displaySrc는?
+    // (E) 만약 JPEG였다면 displaySrc는?
     //     - 그냥 source(문자열) 혹은 File URL을 사용하거나,
     //       blob -> DataURL 변환을 원하는 경우 변환하세요.
     if (!displaySrc) {
@@ -284,6 +334,18 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
       }
     }
 
+    // (F) 한국 주소의 세부 요소를 통합하여 fullAddress 생성
+    let fullAddress = street || "";
+    if (neighborhood) {
+      fullAddress += ` ${neighborhood}`;
+    }
+    if (village) {
+      fullAddress += ` ${village}`;
+    }
+    if (township) {
+      fullAddress += ` ${township}`;
+    }
+
     return {
       date,
       latitude,
@@ -292,7 +354,7 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
       city,
       state,
       postalCode,
-      street,
+      street: fullAddress.trim() || null, // 통합된 주소 사용
       displaySrc,
     };
   } catch (error) {
@@ -306,7 +368,7 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
       city: null,
       state: null,
       postalCode: null,
-      street: null,
+      street: typeof source === "string" ? source : "",
       displaySrc: typeof source === "string" ? source : "",
     };
   }
