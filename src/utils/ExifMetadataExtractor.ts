@@ -31,7 +31,7 @@ export const extractMetadataFromUrls = async (imageUrls: string[]): Promise<Meta
             // Convert GPS coordinates to decimal
             const lat = latitude && latitudeRef ? gpsToDecimal(latitude, latitudeRef) : null;
             const lon = longitude && longitudeRef ? gpsToDecimal(longitude, longitudeRef) : null;
-            const taken_at = exifData?.DateTimeOriginal ? new Date(exifData.DateTimeOriginal).toISOString() : null;
+            //const taken_at = exifData?.DateTimeOriginal ? new Date(exifData.DateTimeOriginal).toISOString() : null;
 
             
             const metadata: Metadata = {

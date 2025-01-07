@@ -30,15 +30,15 @@ import { processFiles } from "../utils/heicToJpg"; // Updated import
 export interface NewTripModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateTrip: (tripData: {
-    title: string;
-    start_date: string;
-    end_date: string;
-    selectedFiles: File[];
-    metadataList: PhotoMetadata[];
+  onCreateTrip: (tripData: { title: string; start_date: string; end_date: string; selectedFiles: File[] }) => Promise<void>;
+  onFileChange: (files: File[]) => void;
+
+  selectedFiles: File[];
+
     //created_by: string;
-  }) => Promise<void>;
+  //created_by: string;
 }
+
 
 // 최대 파일 개수와 용량을 상수로 정의
 const MAX_FILES = 15;
@@ -114,7 +114,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
     try {
       const processed = await processFiles(acceptedFiles);
       const jpgFiles = processed.map((img) => img.file);
-      const metadata = processed.map((img) => img.metadata);
+      const metadata = processed.map((img) => img.metadata as PhotoMetadata);
       setSelectedFiles((prev) => [...prev, ...jpgFiles]);
       setMetadataList((prev) => [...prev, ...metadata]);
     } catch (error) {
@@ -355,7 +355,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                     cursor="pointer"
                     transition="background-color 0.3s, border-color 0.3s"
                   >
-                    <Input {...getInputProps()} />
+                    <Input {...(getInputProps() as any)} />
                     <Icon as={FaUpload} w={8} h={8} color="gray.500" mb={2} />
                     {isDragActive ? (
                       <Text color="blue.500">파일을 여기로 드롭하세요...</Text>

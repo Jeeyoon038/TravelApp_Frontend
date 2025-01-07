@@ -182,7 +182,7 @@ const GalleryModal: FC<GalleryModalProps> = ({ isOpen, onClose, post }) => {
             maxHeight="90vh"
             overflowY="auto"
             p={4}
-            onClick={(e) => e.stopPropagation()} // 내부 클릭 -> 닫힘 방지
+            onClick={(e:any) => e.stopPropagation()} // 내부 클릭 -> 닫힘 방지
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.8 }}

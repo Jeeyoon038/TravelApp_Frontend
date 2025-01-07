@@ -47,19 +47,6 @@ import {
       multiple: true,
       maxFiles: MAX_FILES,
       maxSize: MAX_SIZE_MB * 1024 * 1024,
-      onDrop: (acceptedFiles, rejectedFiles) => {
-        if (selectedFiles.length + acceptedFiles.length > MAX_FILES) {
-          toast({
-            title: "파일 개수 초과",
-            description: `최대 ${MAX_FILES}개의 파일만 업로드할 수 있습니다.`,
-            status: "error",
-            duration: 5000,
-            isClosable: true,
-          });
-          return;
-        }
-        setSelectedFiles(prev => [...prev, ...acceptedFiles]);
-      }
     });
   
     const handleUpload = async () => {

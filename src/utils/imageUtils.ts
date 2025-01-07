@@ -21,8 +21,8 @@ export function getImageLocation(imageFile: ExifImage): Promise<Coordinates | nu
           console.log("EXIF Data:", exifData); // Log to see the EXIF data
 
           if (exifData?.GPSLatitude && exifData?.GPSLongitude) {
-            const lat = exifData.GPSLatitude[0] + exifData.GPSLatitude[1] / 60 + exifData.GPSLatitude[2] / 3600;
-            const lng = exifData.GPSLongitude[0] + exifData.GPSLongitude[1] / 60 + exifData.GPSLongitude[2] / 3600;
+            const lat = (exifData.GPSLatitude[0] as number) + (exifData.GPSLatitude[1] as number) / 60 + (exifData.GPSLatitude[2] as number) / 3600;
+            const lng = (exifData.GPSLongitude[0] as number) + (exifData.GPSLongitude[1] as number) / 60 + (exifData.GPSLongitude[2] as number) / 3600;
             
             const latRef = exifData.GPSLatitudeRef || 'N';
             const lngRef = exifData.GPSLongitudeRef || 'E';

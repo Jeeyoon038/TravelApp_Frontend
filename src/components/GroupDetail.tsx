@@ -63,7 +63,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     });
   };
 
-  const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const offsetX = info.offset.x;
     if (offsetX > 100) {
       moveToPrev();

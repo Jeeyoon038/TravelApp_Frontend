@@ -153,7 +153,7 @@ export const convertHeicToJpgWithMetadata = async (file: File): Promise<File> =>
       "thumbnail": null,
     };
     const exifBytes = piexif.dump(completeExif);
-    const newBinaryString = piexif.insert(exifBytes, binaryString);
+    const newBinaryString = piexif.insert(exifBytes, binaryString) as unknown as string;
 
     // 4. 새로운 Blob과 File 생성
     const newArrayBuffer = binaryStringToArrayBuffer(newBinaryString);

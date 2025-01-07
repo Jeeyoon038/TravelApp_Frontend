@@ -81,10 +81,10 @@ export default function Search() {
     setSearchQuery(e.target.value);
   };
 
-  const handleCardClick = (post: typeof posts[0]) => {
-    setSelectedPost(post);
-    setIsModalOpen(true);
-  };
+  // const handleCardClick = (post: typeof posts[0]) => {
+  //   setSelectedPost(post);
+  //   setIsModalOpen(true);
+  // };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -272,7 +272,7 @@ export default function Search() {
                   username={post.username}
                   location={post.location}
                   images={post.images}
-                  onClick={() => handleCardClick(post)}
+                  //onClick={() => handleCardClick(post)}
                 />
               </GridItem>
             ))}
