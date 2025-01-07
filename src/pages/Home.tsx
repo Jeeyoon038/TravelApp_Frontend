@@ -19,7 +19,8 @@ import NewTripModal from "../components/NewTripModal";
 import { Group } from "../types/group";
 import { extractMetadataFromUrls, Metadata } from "../utils/ExifMetadataExtractor";
 
-const API_BASE_URL = "https://thisis.travelbackend.monster/";
+const apiUrl = import.meta.env.VITE_API_URL;
+const API_BASE_URL = `${apiUrl}/`;
 
 // Assuming you have a user object or context
 // const user = {
