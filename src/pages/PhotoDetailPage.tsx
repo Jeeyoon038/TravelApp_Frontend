@@ -1,6 +1,16 @@
 // src/pages/PhotoDetailPage.tsx
 
-import { Box, Image as ChakraImage, Heading, Spinner, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Image as ChakraImage,
+  Heading,
+  Spinner,
+  Text,
+  Textarea,
+  useToast,
+} from "@chakra-ui/react";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -10,21 +20,25 @@ interface Photo {
   date: Date | null;
   latitude: number | null;
   longitude: number | null;
+  trip_id: number; // trip_id 추가 (number)
+  image_url: string; // image_url 추가
 }
 
 export default function PhotoDetailPage() {
   const location = useLocation();
   const { photo } = (location.state as { photo: Photo }) || {};
 
-  console.log("Received photo object:", photo);
-
   const [processedSrc, setProcessedSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [diaryContent, setDiaryContent] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const toast = useToast();
 
   useEffect(() => {
     if (!photo) {
       setLoading(false);
+      setError("사진 정보가 존재하지 않습니다.");
       return;
     }
 
@@ -34,6 +48,87 @@ export default function PhotoDetailPage() {
     setProcessedSrc(displaySrc);
     setLoading(false);
   }, [photo]);
+
+  // 다이어리 제출 핸들러
+  const handleSubmitDiary = async () => {
+    if (!photo) {
+      toast({
+        title: "사진 정보 없음",
+        description: "다이어리를 작성할 사진 정보가 없습니다.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!photo.trip_id || photo.trip_id <= 0) { // trip_id 검증 추가
+      toast({
+        title: "여행 정보 없음",
+        description: "다이어리를 작성할 여행 정보가 없습니다.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!photo.image_url || photo.image_url.trim() === "") { // image_url 검증 추가
+      toast({
+        title: "이미지 정보 없음",
+        description: "다이어리를 첨부할 이미지 정보가 없습니다.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (diaryContent.trim() === "") {
+      toast({
+        title: "내용 없음",
+        description: "다이어리 내용을 입력해주세요.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 다이어리 생성 API 호출
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/trips/${photo.trip_id}/diaries`, {
+        trip_id: photo.trip_id, // Trip의 trip_id (number) 사용
+        date: photo.date ? new Date(photo.date).toISOString().split("T")[0] : undefined,
+        content: diaryContent,
+        image_url: photo.image_url, // image_url 포함
+      });
+
+      toast({
+        title: "다이어리 작성 완료",
+        description: "다이어리가 성공적으로 작성되었습니다.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // 다이어리 작성 후 폼 초기화
+      setDiaryContent("");
+    } catch (err: any) {
+      console.error("다이어리 작성 오류:", err);
+      toast({
+        title: "작성 실패",
+        description: err.response?.data?.message || "다이어리 작성 중 오류가 발생했습니다.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // 안전 처리
   if (!photo) {
@@ -93,6 +188,27 @@ export default function PhotoDetailPage() {
       ) : (
         <Text color="gray.500">위치 정보가 존재하지 않습니다.</Text>
       )}
+
+      {/* 다이어리 작성 섹션 */}
+      <Box mt={8}>
+        <Heading size="md" mb={4}>
+          다이어리 작성
+        </Heading>
+        <Textarea
+          placeholder="여기에 다이어리를 작성하세요..."
+          value={diaryContent}
+          onChange={(e) => setDiaryContent(e.target.value)}
+          mb={4}
+          rows={6}
+        />
+        <Button
+          colorScheme="teal"
+          onClick={handleSubmitDiary}
+          isLoading={isSubmitting}
+        >
+          저장
+        </Button>
+      </Box>
     </Box>
   );
 }

@@ -1,7 +1,6 @@
 // src/components/GroupGallery.tsx
 
 import { Box, Image as ChakraImage, Spinner, Text } from "@chakra-ui/react";
-//import { useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 import Masonry from "react-masonry-css";
 import { useNavigate } from "react-router-dom";
@@ -94,12 +93,6 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
   const [error, setError] = useState<string | null>(null);
 
   const galleryRef = useRef<HTMLDivElement>(null);
-
-  // Google Maps API load
-  // const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
-  // const { isLoaded, loadError } = useJsApiLoader({
-  //   googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-  // });
 
   // 1) Load photo metadata
   useEffect(() => {
@@ -230,7 +223,8 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
   // 4) Click on image to navigate
   const handleClickPhoto = (photo: GalleryPhoto) => {
-    navigate("/photo-detail", { state: { photo } });
+    // trip_id는 number 타입임
+    navigate("/photo-detail", { state: { photo: { ...photo, trip_id: group.trip_id } } });
   };
 
   // 5) Masonry breakpoints
@@ -402,14 +396,9 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
                   {coordinates && (
                     <MapComponent
                       coordinates={coordinates}
-                      //country={country}
-                      //city={city}
-                      //state={state}
-                      //postalCode={postalCode}
-                      //street={street}
                       location={`${city}, ${state}, ${country}`}
-                      isInteractive = {true}
-                      mapHeight = "300px"
+                      isInteractive={true}
+                      mapHeight="300px"
                     />
                   )}
                 </Box>
