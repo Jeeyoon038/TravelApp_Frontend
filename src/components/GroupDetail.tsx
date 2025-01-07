@@ -17,7 +17,8 @@ import AddImagesModal from "./AddImageModal";
 import AddMemberModal from "./AddMemberModal"; // <-- Import your member modal here
 import GroupGallery from "./GroupGallery";
 
-const API_BASE_URL = "${process.env.VITE_API_URL}/";
+const apiUrl = import.meta.env.VITE_API_URL;
+const API_BASE_URL = `${apiUrl}/`;
 const MotionBox = motion(Box);
 const MotionImage = motion(ChakraImage);
 const MotionHeader = motion(Box);

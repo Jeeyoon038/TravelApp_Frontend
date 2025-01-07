@@ -38,7 +38,8 @@ const GoogleProfile: React.FC = () => {
   // You'll need to implement your own login component here
   // instead of using @react-oauth/google
   const handleLogin = () => {
-    window.location.href = '${process.env.VITE_API_URL}/auth/google';
+    const apiUrl = import.meta.env.VITE_API_URL;
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (
