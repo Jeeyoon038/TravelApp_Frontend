@@ -4,7 +4,7 @@ import { FaGoogle } from 'react-icons/fa'; // 구글 아이콘
 const LoginButton = () => {
   const handleGoogleLogin = () => {
     // 구글 로그인 API 엔드포인트로 리디렉션
-    window.location.href = 'https://thisis.travelbackend.monster/auth/google';
+    window.location.href = '${process.env.VITE_API_URL}/auth/google';
   };
 
   return (
