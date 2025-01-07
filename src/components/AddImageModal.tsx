@@ -28,8 +28,8 @@ import {
 
   
   
-  const MAX_FILES = 10;
-  const MAX_SIZE_MB = 5;
+  const MAX_FILES = 15;
+  const MAX_SIZE_MB = 15;
   
   const AddImagesModal = ({ isOpen, onClose, onUpload, tripId }: AddImagesModalProps) => {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -107,89 +107,88 @@ import {
     };
   
     return (
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
-        <ModalOverlay />
-        <ModalContent borderRadius="xl">
-          <ModalHeader textAlign="center">이미지 추가하기</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            {isUploading ? (
-              <Flex direction="column" align="center" justify="center" height="200px">
-                <Text mb={4}>업로드 중...</Text>
-                <Progress
-                  value={uploadProgress}
-                  size="lg"
-                  width="80%"
-                  borderRadius="full"
-                />
-              </Flex>
-            ) : (
-              <>
-                <Box
-                  {...getRootProps()}
-                  p={6}
-                  borderWidth={2}
-                  borderColor={isDragActive ? "blue.500" : "gray.200"}
-                  borderStyle="dashed"
-                  borderRadius="md"
-                  bg={isDragActive ? "blue.50" : "gray.50"}
-                  textAlign="center"
-                  cursor="pointer"
-                >
-                  <input {...getInputProps()} />
-                  <Icon as={FaUpload} w={8} h={8} color="gray.500" mb={2} />
-                  <Text color="gray.500">
-                    클릭하거나 파일을 드래그하여 업로드하세요
-                  </Text>
-                  <Text color="gray.400" fontSize="sm">
-                    (최대 {MAX_FILES}개, 각 {MAX_SIZE_MB}MB)
-                  </Text>
-                </Box>
-  
-                {selectedFiles.length > 0 && (
-                  <Flex mt={4} flexWrap="wrap" gap={2}>
-                    {selectedFiles.map((file, index) => (
-                      <Box key={index} position="relative">
-                        <Image
-                          src={URL.createObjectURL(file)}
-                          alt={`Preview ${index}`}
-                          boxSize="80px"
-                          objectFit="cover"
-                          borderRadius="md"
-                        />
-                        <Button
-                          size="xs"
-                          position="absolute"
-                          top={1}
-                          right={1}
-                          colorScheme="red"
-                          borderRadius="full"
-                          onClick={() => removeFile(index)}
-                        >
-                          <Icon as={FaTimes} />
-                        </Button>
-                      </Box>
-                    ))}
-                  </Flex>
-                )}
-  
-                <Flex justifyContent="flex-end" mt={4}>
-                  <Button
-                    colorScheme="blue"
-                    mr={3}
-                    onClick={handleUpload}
-                    isLoading={isUploading}
-                  >
-                    업로드
-                  </Button>
-                  <Button onClick={onClose}>취소</Button>
+        <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+          <ModalOverlay />
+          <ModalContent borderRadius="xl">
+            <ModalHeader textAlign="center">이미지 추가하기</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody pb={6}>
+              {isUploading ? (
+                <Flex direction="column" align="center" justify="center" height="200px">
+                  <Text mb={4}>업로드 중...</Text>
+                  <Progress
+                    value={uploadProgress}
+                    size="lg"
+                    width="80%"
+                    borderRadius="full"
+                  />
                 </Flex>
-              </>
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    );
+              ) : (
+                <>
+                  <Box
+                    {...getRootProps()}
+                    p={6}
+                    borderWidth={2}
+                    borderColor={isDragActive ? "blue.500" : "gray.200"}
+                    borderStyle="dashed"
+                    borderRadius="md"
+                    bg={isDragActive ? "blue.50" : "gray.50"}
+                    textAlign="center"
+                    cursor="pointer"
+                  >
+                    <input {...getInputProps()} />
+                    <Icon as={FaUpload} w={8} h={8} color="gray.500" mb={2} />
+                    <Text color="gray.500">사진을 선택하거나 Drag & Drop 하세요</Text>
+                    <Text color="gray.400" fontSize="sm">
+                      (최대 {MAX_FILES}개, 각 {MAX_SIZE_MB}MB)
+                    </Text>
+                  </Box>
+      
+                  {selectedFiles.length > 0 && (
+                    <Flex mt={4} flexWrap="wrap" gap={2}>
+                      {selectedFiles.map((file, index) => (
+                        <Box key={index} position="relative">
+                          <Image
+                            src={URL.createObjectURL(file)}
+                            alt={`Preview ${index}`}
+                            boxSize="80px"
+                            objectFit="cover"
+                            borderRadius="md"
+                          />
+                          <Button
+                            size="xs"
+                            position="absolute"
+                            top={1}
+                            right={1}
+                            colorScheme="red"
+                            borderRadius="full"
+                            onClick={() => removeFile(index)}
+                          >
+                            <Icon as={FaTimes} />
+                          </Button>
+                        </Box>
+                      ))}
+                    </Flex>
+                  )}
+      
+                  <Flex justifyContent="flex-end" mt={4}>
+                    <Button
+                      colorScheme="blue"
+                      mr={3}
+                      onClick={handleUpload}
+                      isLoading={isUploading}
+                    >
+                      업로드
+                    </Button>
+                    <Button onClick={onClose}>취소</Button>
+                  </Flex>
+                </>
+              )}
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+      );
+      
   };
   
   export default AddImagesModal;

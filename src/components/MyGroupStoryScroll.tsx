@@ -2,7 +2,7 @@
 import { Box, Flex, Image, Text } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { Group } from "../types/group";
-
+import { ImageData } from "../types/imagedata";
 import {
   DndContext,
   DragCancelEvent,
@@ -21,6 +21,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+const STORAGE_KEY = 'group_sequence';
+const API_BASE_URL = "http://localhost:3000/"; // Adjust this to your API URL
+
+
 interface MyGroupStoryScrollProps {
   groups: Group[];
   selectedGroupId?: number;
@@ -33,13 +37,31 @@ export default function MyGroupStoryScroll({
   onSelectGroup,
 }: MyGroupStoryScrollProps) {
   const [groups, setGroups] = useState<Group[]>(initialGroups);
-
-  // State to map group IDs to their selected random images
   const [groupImages, setGroupImages] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
+    // Load saved sequence from localStorage
+    const savedSequence = localStorage.getItem(STORAGE_KEY);
+    let orderedGroups = [...initialGroups];
+
+    if (savedSequence) {
+      try {
+        const sequence = JSON.parse(savedSequence) as number[];
+        orderedGroups = orderedGroups.sort((a, b) => {
+          const indexA = sequence.indexOf(a.trip_id);
+          const indexB = sequence.indexOf(b.trip_id);
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+        });
+      } catch (error) {
+        console.error('Error loading sequence:', error);
+      }
+    }
+
+    // Set up images
     const imagesMap: { [key: number]: string } = {};
-    initialGroups.forEach((group) => {
+    orderedGroups.forEach((group) => {
       if (group.image_urls && group.image_urls.length > 0) {
         const randomIndex = Math.floor(Math.random() * group.image_urls.length);
         imagesMap[group.trip_id] = group.image_urls[randomIndex];
@@ -47,21 +69,17 @@ export default function MyGroupStoryScroll({
         imagesMap[group.trip_id] = "/images/default-image.jpg";
       }
     });
+
     setGroupImages(imagesMap);
-    setGroups(initialGroups);
+    setGroups(orderedGroups);
   }, [initialGroups]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
+      activationConstraint: { distance: 5 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 150,
-        tolerance: 5,
-      },
+      activationConstraint: { delay: 150, tolerance: 5 },
     })
   );
 
@@ -69,7 +87,7 @@ export default function MyGroupStoryScroll({
     document.body.style.overflow = "hidden";
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     document.body.style.overflow = "auto";
 
     const { active, over } = event;
@@ -80,7 +98,14 @@ export default function MyGroupStoryScroll({
     if (oldIndex < 0 || newIndex < 0) return;
 
     const newGroups = arrayMove(groups, oldIndex, newIndex);
+    
+    // Save the new sequence to localStorage
+    const sequence = newGroups.map(group => group.trip_id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sequence));
+
+    // Update state
     setGroups(newGroups);
+
   };
 
   const handleDragCancel = (_event: DragCancelEvent) => {
@@ -107,10 +132,10 @@ export default function MyGroupStoryScroll({
           bg="white"
           alignItems="center"
           css={{
-            WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
-            scrollbarWidth: "none", // Firefox
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
             "&::-webkit-scrollbar": {
-              display: "none", // Chrome, Safari
+              display: "none",
             },
           }}
         >
@@ -154,7 +179,9 @@ function SortableGroupCard({
   };
 
   const formatDate = (dateString: string | Date) => {
+    //console.log('group.start_date:', group.start_date);
     const date = new Date(dateString);
+    //console.log('Parsed date:', date.toString());
     const year = date.getFullYear();
     const monthNames = [
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
