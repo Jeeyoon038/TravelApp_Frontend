@@ -261,7 +261,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
       ? group.image_urls[currentGalleryIndex]
       : group.image_urls[0];
 
-  const coverImageHeight = isHeaderCollapsed ? "200px" : "300px";
+  const coverImageHeight = isHeaderCollapsed ? "250px" : "300px";
 
   return (
     <Box w="100%" mb={4}>

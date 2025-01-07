@@ -1,7 +1,7 @@
 // src/components/GroupGallery.tsx
 
 import { Box, Image as ChakraImage, Spinner, Text } from "@chakra-ui/react";
-//import { useJsApiLoader } from "@react-google-maps/api";
+// import { useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 import Masonry from "react-masonry-css";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ import { MapComponent } from "./MapComponent"; // Small map component
 
 interface GalleryPhoto {
   originalSrc: string;
-  displaySrc: string; 
+  displaySrc: string;
   date: Date | null;
   latitude: number | null;
   longitude: number | null;
@@ -230,7 +230,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
   // 4) Click on image to navigate
   const handleClickPhoto = (photo: GalleryPhoto) => {
-    navigate("/photo-detail", { state: { photo } });
+    navigate("/photo-detail", { state: { trip_id: group.trip_id, image_url: photo.originalSrc } });
   };
 
   // 5) Masonry breakpoints
@@ -402,14 +402,9 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
                   {coordinates && (
                     <MapComponent
                       coordinates={coordinates}
-                      //country={country}
-                      //city={city}
-                      //state={state}
-                      //postalCode={postalCode}
-                      //street={street}
                       location={`${city}, ${state}, ${country}`}
-                      isInteractive = {true}
-                      mapHeight = "300px"
+                      isInteractive={true}
+                      mapHeight="300px"
                     />
                   )}
                 </Box>
