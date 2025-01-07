@@ -1,6 +1,6 @@
 
 //LoginPage.tsx
-import { Box, Button, HStack, Icon, IconProps, Text,  VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Icon, IconProps, Text, VStack } from "@chakra-ui/react";
 import { SVGProps, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { JSX } from "react/jsx-runtime";
@@ -61,7 +61,7 @@ export default function LoginPage() {
   const handleGoogleLogin = () => {
     // 백엔드 구글 OAuth 엔드포인트로 리디렉션
     console.log("Starting Google Login");
-    window.location.href = "http://localhost:3000/auth/google";
+    window.location.href = "http://travelbackend.monster:3000/auth/google";
   };
 
   return (
