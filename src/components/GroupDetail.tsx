@@ -12,6 +12,7 @@ import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FiPlus } from "react-icons/fi";
 import { Group } from "../types/group";
+import { extractMetadataFromUrls, Metadata } from "../utils/ExifMetadataExtractor"; // <-- Import metadata extractor
 import { processFiles } from "../utils/heicToJpg";
 import AddImagesModal from "./AddImageModal";
 import AddMemberModal from "./AddMemberModal"; // <-- Import your member modal here
@@ -109,28 +110,111 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     return imageUrls;
   };
 
+  const uploadMetadata = async (metadataArray: Metadata[]) => {
+    for (let i = 0; i < metadataArray.length; i++) {
+      const metadata = metadataArray[i];
+
+      // Only send metadata if all required fields are available
+      if (metadata.latitude !== null && metadata.longitude !== null && metadata.taken_at !== null) {
+        const payload = {
+          latitude: metadata.latitude,
+          longitude: metadata.longitude,
+          taken_at: metadata.taken_at,
+          image_url: metadata.image_url,
+          image_id: metadata.image_id,
+        };
+
+        try {
+          const metadataResponse = await fetch(`${API_BASE_URL}image-metadata`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (metadataResponse.status === 201) {
+            toast({
+              title: "Metadata Saved",
+              description: `Metadata for image ${i + 1} has been saved.`,
+              status: "success",
+              duration: 3000,
+              isClosable: true,
+            });
+          } else {
+            let errorData;
+            try {
+              errorData = await metadataResponse.json();
+            } catch (parseError) {
+              errorData = { message: "Unknown error occurred during metadata upload." };
+            }
+            throw new Error(errorData.message || "Failed to save metadata.");
+          }
+        } catch (error: any) {
+          console.error(`Error saving metadata for image ${i + 1}:`, error);
+          toast({
+            title: "Metadata Upload Error",
+            description:
+              error.message || `An error occurred while uploading metadata for image ${i + 1}.`,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+          // Continue with other metadata uploads even if one fails
+        }
+      } else {
+        console.warn(`Metadata for image ${i + 1} is incomplete and was not saved.`);
+        toast({
+          title: "Incomplete Metadata",
+          description: `Metadata for image ${i + 1} is incomplete and was not saved.`,
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    }
+    console.log("All metadata uploads completed.");
+  };
+
   const handleImageUpload = async (files: File[]) => {
     try {
+      // Step 1: Process files (e.g., convert HEIC to JPG)
       const processed = await processFiles(files);
       const jpgFiles = processed.map((img) => img.file);
-      const metadata = processed.map((img) => img.metadata);
+      const metadataFiles = processed.map((img) => img.file); // Assuming metadata extraction will be done after upload
 
+      // Step 2: Upload images and get their URLs
       const uploadedImageUrls = await uploadImages(jpgFiles);
 
-      const response = await fetch(`${API_BASE_URL}trips/${group.trip_id}/images`, {
+      if (!uploadedImageUrls || uploadedImageUrls.length === 0) {
+        toast({
+          title: "No Images Uploaded",
+          description: "Please upload at least one image.",
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      // Step 3: Update trip's image_urls in the backend
+      const updateTripResponse = await fetch(`${API_BASE_URL}trips/${group.trip_id}/images`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           imageUrls: uploadedImageUrls,
-          metadata: metadata,
         }),
       });
 
-      if (!response.ok) {
+      if (!updateTripResponse.ok) {
         throw new Error("Failed to update trip images");
       }
+
+      // Step 4: Extract metadata from uploaded image URLs
+      const metadata: Metadata[] = await extractMetadataFromUrls(uploadedImageUrls);
+
+      // Step 5: Upload metadata to the backend
+      await uploadMetadata(metadata);
 
       toast({
         title: "이미지 업로드 성공",
@@ -139,7 +223,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         duration: 3000,
         isClosable: true,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading images:", error);
       toast({
         title: "업로드 실패",
@@ -177,7 +261,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         duration: 3000,
         isClosable: true,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error inviting member:", error);
       toast({
         title: "초대 실패",
@@ -232,7 +316,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
       transition: { duration: 0.2, ease: "easeInOut" },
     },
     collapsed: {
-      height: "200px",
+      height: "250px",
       borderTopLeftRadius: "0px",
       borderTopRightRadius: "0px",
       borderBottomLeftRadius: "7px",
@@ -446,7 +530,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         tripId={group.trip_id.toString()}
       />
 
-      {/* 2) Modal for inviting members (replaced AddImagesModal) */}
+      {/* 2) Modal for inviting members */}
       <AddMemberModal
         isOpen={isMemberModalOpen}
         onClose={onCloseMemberModal}
