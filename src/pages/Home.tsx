@@ -19,7 +19,7 @@ import NewTripModal from "../components/NewTripModal";
 import { Group } from "../types/group";
 import { extractMetadataFromUrls, Metadata } from "../utils/ExifMetadataExtractor";
 
-const API_BASE_URL = "http://travelbackend.monster:3000/";
+const API_BASE_URL = "https://thisis.travelbackend.monster/";
 
 // Assuming you have a user object or context
 // const user = {

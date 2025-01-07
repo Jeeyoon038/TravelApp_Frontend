@@ -61,7 +61,7 @@ export default function LoginPage() {
   const handleGoogleLogin = () => {
     // 백엔드 구글 OAuth 엔드포인트로 리디렉션
     console.log("Starting Google Login");
-    window.location.href = "http://travelbackend.monster:3000/auth/google";
+    window.location.href = "https://thisis.travelbackend.monster/auth/google";
   };
 
   return (
