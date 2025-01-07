@@ -36,22 +36,22 @@ export default function LoginPage() {
     const email = params.get('email');
     const name = params.get('name');
     const photo = params.get('photo');
-    const googleId = params.get('googleId');
+    //const googleId = params.get('googleId');
   
-    console.log('LoginPage: Parameters:', { email, name, photo,googleId });
+    console.log('LoginPage: Parameters:', { email, name, photo });
   
-    if (email && name && photo&&googleId) {
+    if (email && name && photo) {
       localStorage.setItem('user_email', email);
       localStorage.setItem('user_name', name);
       localStorage.setItem('user_photo', photo);
-      localStorage.setItem('user_google_id', googleId);
+      //localStorage.setItem('user_google_id', googleId);
       console.log('LoginPage: Data saved to localStorage');
       navigate('/home');
     } else {
       // Check if already logged in
       const storedEmail = localStorage.getItem('user_email');
-      const storedGoogleId = localStorage.getItem('user_google_id');
-      if (storedEmail && storedGoogleId) {
+      //const storedGoogleId = localStorage.getItem('user_google_id');
+      if (storedEmail ) {
         console.log('LoginPage: Found existing login');
         navigate('/home');
       }
