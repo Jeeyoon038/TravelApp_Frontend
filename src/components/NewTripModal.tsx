@@ -36,6 +36,7 @@ export interface NewTripModalProps {
     end_date: string;
     selectedFiles: File[];
     metadataList: PhotoMetadata[];
+    created_by: string;
   }) => Promise<void>;
 }
 
@@ -171,6 +172,21 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
   const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault();
 
+
+    const googleId = localStorage.getItem('user_google_id');
+
+    if (!googleId) {
+      toast({
+        title: "인증 오류",
+        description: "사용자 인증 정보를 찾을 수 없습니다. 다시 로그인해 주세요.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+
     // 필수 필드 검증
     if (!newTrip.title || !newTrip.start_date || !newTrip.end_date) {
       toast({
@@ -220,6 +236,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
         end_date: newTrip.end_date,
         selectedFiles: selectedFiles, // JPG 파일 배열
         metadataList: metadataList, // Metadata 배열
+        created_by: googleId 
       };
 
       // 실제 업로드 시작

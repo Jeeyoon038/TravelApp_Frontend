@@ -1,15 +1,12 @@
-//GoogleProfile.tsx
+// GoogleProfile.tsx
 import { useState, useEffect } from 'react';
-import { GoogleLogin, GoogleCredentialResponse } from '@react-oauth/google';
-import { useNavigate } from 'react-router-dom';
+import ProfileImage, { UserProfile } from './ProfileImage';
 
-interface GoogleUser {
+interface GoogleUser extends UserProfile {
   googleId: string;
   email: string;
-  displayName: string;
   firstName: string;
   lastName: string;
-  photo: string;
 }
 
 const GoogleProfile: React.FC = () => {
@@ -21,8 +18,6 @@ const GoogleProfile: React.FC = () => {
       const name = localStorage.getItem('user_name');
       const photo = localStorage.getItem('user_photo');
 
-      console.log('GoogleProfile: Checking auth:', { email, name, photo });
-
       if (email && name && photo) {
         setUser({
           googleId: '',
@@ -32,41 +27,39 @@ const GoogleProfile: React.FC = () => {
           lastName: name.split(' ')[1] || '',
           photo
         });
-        console.log('GoogleProfile: User authenticated');
       }
     };
 
     checkAuth();
-    // Add event listener to check auth on storage changes
     window.addEventListener('storage', checkAuth);
     return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
-  const handleLoginSuccess = (response: GoogleCredentialResponse) => {
-    if (!response.credential) {
-      console.log('GoogleProfile: No credentials received');
-      return;
-    }
-    console.log('GoogleProfile: Redirecting to auth endpoint');
+  // You'll need to implement your own login component here
+  // instead of using @react-oauth/google
+  const handleLogin = () => {
     window.location.href = 'http://localhost:3000/auth/google';
   };
 
   return (
-    <div className="flex items-center">
+    <div style={{ display: 'flex', alignItems: 'center' }}>
       {!user ? (
-        <GoogleLogin 
-          onSuccess={handleLoginSuccess}
-          onError={(error:Error) => console.error('GoogleProfile: Login failed:', error)}
-          useOneTap
-        />
+        <button onClick={handleLogin}>
+          Sign in with Google
+        </button>
       ) : (
-        <div className="flex items-center">
-          <img
-            src={user.photo}
-            alt="Profile"
-            className="w-10 h-10 rounded-full object-cover"
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ProfileImage 
+            user={user}
+            size={48}
           />
-          <span className="ml-2 font-medium text-sm">{user.displayName}</span>
+          <span style={{ 
+            marginLeft: '8px',
+            fontSize: '14px',
+            fontWeight: 500
+          }}>
+            {user.displayName}
+          </span>
         </div>
       )}
     </div>

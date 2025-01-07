@@ -1,12 +1,15 @@
 // GroupDetail.tsx
 
-import { Box, Button, Image as ChakraImage, Flex, Text } from "@chakra-ui/react";
+import { Box, Button, Image as ChakraImage, Flex, Text, useToast } from "@chakra-ui/react";
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FiPlus } from "react-icons/fi";
 import { Group } from "../types/group";
 import GroupGallery from "./GroupGallery";
+import AddImagesModal from "./AddImageModal";
+import { processFiles } from "../utils/heicToJpg";
 
+const API_BASE_URL = "http://localhost:3000/";
 const MotionBox = motion(Box);
 const MotionImage = motion(ChakraImage);
 const MotionHeader = motion(Box);
@@ -17,20 +20,14 @@ interface GroupDetailProps {
 }
 
 export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailProps) {
-  // 아이콘 펼침/접힘 상태
   const [areIconsExpanded, setAreIconsExpanded] = useState(false);
-  // galleryImages 슬라이드용 인덱스
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
-  // 슬라이드 방향 (오른쪽→왼쪽=1, 왼쪽→오른쪽=-1)
   const [slideDirection, setSlideDirection] = useState<number>(1);
-
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const toast = useToast();
 
-  // ------------------------------
-  // (1) 자동 슬라이드 타이머
-  // ------------------------------
   useEffect(() => {
-    // galleryImages가 2장 이상일 때만 자동 슬라이드
     if (group.image_urls && group.image_urls.length > 1) {
       timerRef.current = setInterval(() => {
         moveToNext();
@@ -40,45 +37,105 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group.image_urls]);
 
-  // 다음 이미지로 이동
   const moveToNext = () => {
-    setSlideDirection(1); // 오른쪽 → 왼쪽
+    setSlideDirection(1);
     setCurrentGalleryIndex((prevIndex) => {
       if (!group.image_urls) return prevIndex;
       return (prevIndex + 1) % group.image_urls.length;
     });
   };
 
-  // 이전 이미지로 이동
   const moveToPrev = () => {
-    setSlideDirection(-1); // 왼쪽 → 오른쪽
+    setSlideDirection(-1);
     setCurrentGalleryIndex((prevIndex) => {
       if (!group.image_urls) return prevIndex;
       return (prevIndex - 1 + group.image_urls.length) % group.image_urls.length;
     });
   };
 
-  // ------------------------------
-  // (2) 스와이프(드래그) 처리
-  // ------------------------------
   const handleDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const offsetX = info.offset.x;
-    // 오른쪽(+x) 드래그 => 이전 이미지
     if (offsetX > 100) {
       moveToPrev();
-    }
-    // 왼쪽(-x) 드래그 => 다음 이미지
-    else if (offsetX < -100) {
+    } else if (offsetX < -100) {
       moveToNext();
     }
   };
 
-  // ------------------------------
-  // (3) 애니메이션 variants
-  // ------------------------------
+  const handleIconToggle = () => {
+    setAreIconsExpanded((prev) => !prev);
+  };
+
+  // New image upload handlers
+  const onOpenImageModal = () => setIsImageModalOpen(true);
+  const onCloseImageModal = () => setIsImageModalOpen(false);
+
+  const uploadImages = async (files: File[]): Promise<string[]> => {
+    const imageUrls: string[] = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${API_BASE_URL}upload/image`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      imageUrls.push(data.imageUrl);
+    }
+    return imageUrls;
+  };
+
+  const handleImageUpload = async (files: File[]) => {
+    try {
+      const processed = await processFiles(files);
+      const jpgFiles = processed.map(img => img.file);
+      const metadata = processed.map(img => img.metadata);
+
+      const uploadedImageUrls = await uploadImages(jpgFiles);
+
+      const response = await fetch(`${API_BASE_URL}trips/${group.trip_id}/images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrls: uploadedImageUrls,
+          metadata: metadata
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update trip images');
+      }
+
+      toast({
+        title: "이미지 업로드 성공",
+        description: "새로운 이미지가 추가되었습니다.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast({
+        title: "업로드 실패",
+        description: "이미지 업로드 중 오류가 발생했습니다.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      throw error;
+    }
+  };
+
   const slideVariants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 300 : -300,
@@ -110,28 +167,6 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     },
   };
 
-  // ------------------------------
-  // (4) 표시할 이미지
-  // ------------------------------
-  // galleryImages 배열이 있으면 슬라이딩할 currentGalleryIndex 이미지를,
-  // 없으면 fallback으로 coverImage를 보여줍니다.
-  const currentCoverImage =
-    group.image_urls && group.image_urls.length > 0
-      ? group.image_urls[currentGalleryIndex]
-      : group.image_urls[0];
-
-  // ------------------------------
-  // (5) 기타 UI/레이아웃
-  // ------------------------------
-  const coverImageHeight = isHeaderCollapsed ? "200px" : "300px";
-
-  const handleIconToggle = () => {
-    setAreIconsExpanded((prev) => !prev);
-  };
-
-  // ------------------------------
-  // (6) 헤더 애니메이션 variants
-  // ------------------------------
   const headerVariants = {
     expanded: {
       height: "300px",
@@ -150,9 +185,6 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     },
   };
 
-  // ------------------------------
-  // (7) 오버레이 및 텍스트 애니메이션 variants
-  // ------------------------------
   const overlayVariants = {
     visible: {
       opacity: 1,
@@ -164,22 +196,15 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     },
   };
 
-  const textVariants = {
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.5, ease: "easeOut" },
-    },
-    hidden: {
-      y: 20,
-      opacity: 0,
-      transition: { duration: 0.5, ease: "easeIn" },
-    },
-  };
+  const currentCoverImage =
+    group.image_urls && group.image_urls.length > 0
+      ? group.image_urls[currentGalleryIndex]
+      : group.image_urls[0];
+
+  const coverImageHeight = isHeaderCollapsed ? "200px" : "300px";
 
   return (
     <Box w="100%" mb={4}>
-      {/* 대표 이미지 영역 - MotionHeader로 애니메이션 적용 */}
       <MotionHeader
         variants={headerVariants}
         animate={isHeaderCollapsed ? "collapsed" : "expanded"}
@@ -190,7 +215,6 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         zIndex={isHeaderCollapsed ? 10 : "auto"}
         bg={isHeaderCollapsed ? "#FFFFFF" : "transparent"}
       >
-        {/* 슬라이드 또는 페이드 애니메이션 적용 */}
         <Box position="relative" w="100%" h={coverImageHeight}>
           <AnimatePresence custom={slideDirection} mode="popLayout">
             <MotionImage
@@ -200,13 +224,11 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
               w="100%"
               h="100%"
               objectFit="cover"
-              // 조건에 따라 슬라이드 또는 페이드 variants 적용
               variants={isHeaderCollapsed ? fadeVariants : slideVariants}
               custom={slideDirection}
               initial={isHeaderCollapsed ? "enter" : "enter"}
               animate="center"
               exit={isHeaderCollapsed ? "exit" : "exit"}
-              // 드래그(스와이프) 설정
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               onDragEnd={handleDragEnd}
@@ -214,10 +236,8 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
           </AnimatePresence>
         </Box>
 
-        {/* 헤더가 접힌 상태일 때 오버레이 및 텍스트/버튼 */}
         {isHeaderCollapsed && (
           <>
-            {/* 오버레이 - AnimatePresence와 Motion을 활용 */}
             <AnimatePresence>
               <MotionBox
                 variants={overlayVariants}
@@ -234,33 +254,6 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
               />
             </AnimatePresence>
 
-            {/* 그룹 닉네임, 날짜 - 애니메이션 추가 */}
-            <AnimatePresence>
-              <MotionBox
-                variants={textVariants}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                position="absolute"
-                bottom="90px"
-                left="20px"
-                right="20px"
-                zIndex={2}
-                display="flex"
-                flexDirection="column"
-                gap={2}
-                color="white"
-              >
-                <Text fontSize="3xl" fontWeight="bold" mb={-3}>
-                  {group.title}
-                </Text>
-                <Text fontSize="md" fontWeight="light" mb={-6}>
-                  {group.start_date instanceof Date ? group.start_date.toDateString() : group.start_date}
-                </Text>
-              </MotionBox>
-            </AnimatePresence>
-
-            {/* 멤버 프로필 + Invite 버튼 - 애니메이션 추가 */}
             <AnimatePresence>
               <MotionBox
                 variants={overlayVariants}
@@ -275,6 +268,31 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                 alignItems="center"
                 gap={3}
               >
+                <Button
+                  size="sm"
+                  borderRadius="full"
+                  bg="white"
+                  color="black"
+                  fontWeight="bold"
+                  leftIcon={<FiPlus />}
+                  _hover={{ bg: "gray.200" }}
+                  onClick={onOpenImageModal}
+                >
+                  Image
+                </Button>
+
+                <Button
+                  size="sm"
+                  borderRadius="full"
+                  bg="white"
+                  color="black"
+                  fontWeight="bold"
+                  leftIcon={<FiPlus />}
+                  _hover={{ bg: "gray.200" }}
+                >
+                  Invite
+                </Button>
+
                 <Flex onClick={handleIconToggle} cursor="pointer">
                   {group.member_google_ids.map((profileImage, index) => (
                     <MotionBox
@@ -302,25 +320,12 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                     </MotionBox>
                   ))}
                 </Flex>
-
-                <Button
-                  size="sm"
-                  borderRadius="full"
-                  bg="white"
-                  color="black"
-                  fontWeight="bold"
-                  leftIcon={<FiPlus />}
-                  _hover={{ bg: "gray.200" }}
-                >
-                  Invite
-                </Button>
               </MotionBox>
             </AnimatePresence>
           </>
         )}
       </MotionHeader>
 
-      {/* 헤더 펼쳐진 상태일 때 표시되는 상세정보 */}
       {!isHeaderCollapsed && (
         <Box px={3} mt={2} textAlign="left">
           <Text fontSize={20} fontWeight="bold" color="black" mb={-1}>
@@ -333,7 +338,6 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
             {group.end_date instanceof Date ? group.end_date.toDateString() : group.end_date}
           </Text>
 
-          {/* 멤버들 프로필 (겹쳐 보여주기) */}
           <Flex mt={3} alignItems="center">
             {group.member_google_ids.map((profileImage, index) => (
               <Box
@@ -358,10 +362,16 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         </Box>
       )}
 
-      {/* 본문 아래 공간 + 갤러리 섹션 */}
       <Box mb={10} />
       <GroupGallery group={group} isHeaderCollapsed={isHeaderCollapsed} />
       <Box mb={100} />
+
+      <AddImagesModal 
+        isOpen={isImageModalOpen}
+        onClose={onCloseImageModal}
+        onUpload={handleImageUpload}
+        tripId={group.trip_id.toString()}
+      />
     </Box>
   );
 }
