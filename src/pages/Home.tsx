@@ -388,7 +388,7 @@ export default function Home() {
     const newScrollTop = e.currentTarget.scrollTop;
     setScrollTop(newScrollTop);
     setShowCollapsedHeader(newScrollTop > 300);
-    console.log("Scrolled to:", newScrollTop);
+    //console.log("Scrolled to:", newScrollTop);
   };
 
   // Show loading screen if fetching data
@@ -414,7 +414,7 @@ export default function Home() {
         }}
       >
         <HomeHeader 
-          user={user} 
+          //user={user} 
           onCreateTrip={onOpen} 
         />
 
@@ -443,7 +443,7 @@ export default function Home() {
         <Box position="fixed" top="50%" left="50%" transform="translate(-50%, -50%)" bg="white" p={4} borderRadius="md" boxShadow="lg">
           <Flex align="center">
             <Spinner size="lg" mr={2} />
-            <Text>Extracting metadata...</Text>
+            <Text>Extracting metadata...</Text> 
           </Flex>
         </Box>
       )}
