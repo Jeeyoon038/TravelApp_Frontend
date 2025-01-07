@@ -1,23 +1,23 @@
 //AddImageModal.tsx
 import {
-    Modal,
-    ModalOverlay,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
-    ModalCloseButton,
-    Button,
-    Box,
-    Icon,
-    Text,
-    Flex,
-    Progress,
-    useToast,
-    Image
-  } from "@chakra-ui/react";
-  import { useDropzone } from "react-dropzone";
-  import { FaUpload, FaTimes } from "react-icons/fa";
-  import { useState } from "react";
+  Box,
+  Button,
+  Flex,
+  Icon,
+  Image,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Progress,
+  Text,
+  useToast
+} from "@chakra-ui/react";
+import { useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { FaTimes, FaUpload } from "react-icons/fa";
   
   interface AddImagesModalProps {
     isOpen: boolean;
