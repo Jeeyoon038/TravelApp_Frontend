@@ -4,7 +4,7 @@ import axios from "axios";
 const sendTripToBackend = async (tripData: { groupId: string;  title: string; startDate: string; endDate: string }) => {
   try {
     // POST 요청으로 trip 정보를 백엔드로 보냄
-    const response = await axios.post("http://localhost:3000/api/trips", {
+    const response = await axios.post("http://travelbackend.monster:3000/api/trips", {
       group_id: tripData.groupId,
       title: tripData.title,
       start_date: tripData.startDate,

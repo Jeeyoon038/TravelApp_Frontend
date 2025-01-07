@@ -1,13 +1,15 @@
-import React from 'react';
-import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { ChakraProvider } from '@chakra-ui/react';
 import { LoadScript } from '@react-google-maps/api';
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import React from 'react';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
+import LoginPage from './pages/LoginPage';
 import PhotoDetailPage from './pages/PhotoDetailPage';
 import Search from './pages/Search';
 import SearchResultPage from './pages/SearchResultPage';
-import LoginPage from './pages/LoginPage';
+
+
 
 // interface User {
 //   access_token: string;
@@ -39,7 +41,7 @@ export default function App() {
           googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} 
           loadingElement={<div>Loading...</div>}
         >
-          <BrowserRouter>
+          <HashRouter>
             <Routes>
               <Route
                 path="/"
@@ -82,7 +84,7 @@ export default function App() {
                 } 
               />
             </Routes>
-          </BrowserRouter>
+          </HashRouter>
         </LoadScript>
       </ChakraProvider>
     </GoogleOAuthProvider>

@@ -1,23 +1,23 @@
 // GroupDetail.tsx
 
-import { 
-  Box, 
-  Button, 
-  Image as ChakraImage, 
-  Flex, 
-  Text, 
-  useToast 
+import {
+  Box,
+  Button,
+  Image as ChakraImage,
+  Flex,
+  Text,
+  useToast
 } from "@chakra-ui/react";
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FiPlus } from "react-icons/fi";
 import { Group } from "../types/group";
-import GroupGallery from "./GroupGallery";
+import { processFiles } from "../utils/heicToJpg";
 import AddImagesModal from "./AddImageModal";
 import AddMemberModal from "./AddMemberModal"; // <-- Import your member modal here
-import { processFiles } from "../utils/heicToJpg";
+import GroupGallery from "./GroupGallery";
 
-const API_BASE_URL = "http://localhost:3000/";
+const API_BASE_URL = "http://travelbackend.monster:3000/";
 const MotionBox = motion(Box);
 const MotionImage = motion(ChakraImage);
 const MotionHeader = motion(Box);

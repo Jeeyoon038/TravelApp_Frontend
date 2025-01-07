@@ -22,7 +22,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 const STORAGE_KEY = 'group_sequence';
-// const API_BASE_URL = "http://localhost:3000/"; // Adjust this to your API URL
 
 
 interface MyGroupStoryScrollProps {

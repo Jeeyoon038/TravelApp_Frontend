@@ -1,5 +1,5 @@
 // GoogleProfile.tsx
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ProfileImage, { UserProfile } from './ProfileImage';
 
 interface GoogleUser extends UserProfile {
@@ -38,7 +38,7 @@ const GoogleProfile: React.FC = () => {
   // You'll need to implement your own login component here
   // instead of using @react-oauth/google
   const handleLogin = () => {
-    window.location.href = 'http://localhost:3000/auth/google';
+    window.location.href = 'http://travelbackend.monster:3000/auth/google';
   };
 
   return (
