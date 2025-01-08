@@ -51,7 +51,7 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => console.log("Swiped left"),
     onSwipedRight: () => console.log("Swiped right"),
-    preventDefaultTouchmoveEvent: true,
+    preventScrollOnSwipe: true,
     trackTouch: true,
   });
 
