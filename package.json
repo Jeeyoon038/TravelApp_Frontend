@@ -28,6 +28,7 @@
     "jwt-decode": "^4.0.0",
     "libheif-js": "^1.18.2",
     "lucide-react": "^0.469.0",
+    "node-fetch": "^3.3.2",
     "piexifjs": "^1.0.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

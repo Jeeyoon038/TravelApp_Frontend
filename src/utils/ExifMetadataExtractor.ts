@@ -23,7 +23,7 @@ export interface Metadata {
 export const extractMetadataFromUrls = async (imageUrls: string[]): Promise<Metadata[]> => {
   const promises = imageUrls.map((url) => {
     return new Promise<Metadata>((resolve) => {
-      const img = new Image();
+      const img = new (globalThis as any).Image();
       img.crossOrigin = 'Anonymous'; // To handle CORS issues
       img.src = url;
 

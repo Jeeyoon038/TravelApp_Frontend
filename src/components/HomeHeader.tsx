@@ -2,6 +2,7 @@ import { AddIcon } from "@chakra-ui/icons";
 import {
   Box, Button, Flex,
   Icon,
+  Image,
   Modal,
   ModalBody, ModalCloseButton,
   ModalContent,
@@ -103,9 +104,19 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
       position="relative"
       zIndex={1}
     >
-      <Text fontWeight="bold" fontSize={24} mb={3}>
-        My Travel Log
-      </Text>
+      <Flex alignItems="center" mb={3}>
+      {/* 로고 이미지 추가 */}
+      <Image 
+        src="/logo.png" 
+        alt="My Travel Log Logo"
+        maxHeight="40px"
+        maxWidth="200px"
+        mr={3} 
+      />
+
+
+      
+    </Flex>
  
       <Flex alignItems="center">
         {userData ? (
@@ -139,7 +150,7 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
           alignItems="center"
         >
           <Icon as={AddIcon} boxSize={3} mr={1} />
-          Add Your Story
+          New Trip
         </Button>
       </Flex>
 

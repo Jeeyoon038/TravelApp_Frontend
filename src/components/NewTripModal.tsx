@@ -145,7 +145,11 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
         
         setUploadProgress((prev) => prev + (50 / files.length));
 
-        const response = await axios.post(
+        interface ImageUploadResponse {
+          imageUrl: string;
+        }
+
+        const response = await axios.post<ImageUploadResponse>(
           `${API_CONFIG.baseURL}/upload/image`, 
           formData,
           {
@@ -452,7 +456,7 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                     cursor="pointer"
                     transition="background-color 0.3s, border-color 0.3s"
                   >
-                    <Input {...getInputProps()} />
+                    <input {...getInputProps()} style={{ display: 'none' }} />
                     <Icon as={FaUpload} w={8} h={8} color="gray.500" mb={2} />
                     {isDragActive ? (
                       <Text color="blue.500">파일을 여기로 드롭하세요...</Text>
