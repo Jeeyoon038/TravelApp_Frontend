@@ -98,7 +98,7 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images 
           >
             <ChakraImage
               src={image}
-              alt={`Scrollable Image ${index + 1}`}
+             alt={`Scrollable Image ${index + 1}`}
               objectFit="cover"
               width="100%"
               height="100%"
