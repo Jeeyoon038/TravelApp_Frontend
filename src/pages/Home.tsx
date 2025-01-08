@@ -161,7 +161,7 @@ export default function Home() {
     } catch (error: any) {
       console.error('Error creating trip:', error);
       
-      let errorMessage = "An unexpected error occurred";
+      //let errorMessage = "An unexpected error occurred";
       //if (axios.isAxiosError(error)) {
         //errorMessage = error.response?.data?.message || error.message;
       //}

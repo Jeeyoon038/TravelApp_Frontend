@@ -286,13 +286,13 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
   };
 
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | Date) => {
     const options: Intl.DateTimeFormatOptions = {
       year: "numeric",
       month: "long",
       day: "numeric",
     };
-    const parsedDate = new Date(date);
+    const parsedDate = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat("ko-KR", options).format(parsedDate);
   };
 
@@ -433,10 +433,10 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                   {group.title}
                 </Text>
                 <Text fontSize="sm" color="white" opacity={0.9} mb={-0.5}>
-                  {formatDate(group.start_date)}부터
+                {`${formatDate(group.start_date)}부터`}
               </Text>
               <Text fontSize="sm" color="white" opacity={0.9} mb={3}>
-                  {formatDate(group.end_date)}까지
+              {`${formatDate(group.end_date)}까지`}
               </Text>
 
                 {/* Buttons for Image Upload and Member Invitation */}
@@ -512,11 +512,11 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
 
            {/* Group Start Date */}
            <Text fontSize={12} color="gray.600" mb={-0.5}>
-                  {formatDate(group.start_date)}부터
+           {`${formatDate(group.start_date)}부터`}
               </Text>
             {/* Group End Date */}
             <Text fontSize={12} color="gray.600">
-                  {formatDate(group.end_date)}까지
+            {`${formatDate(group.start_date)}까지`}
               </Text>
 
           {/* Member Avatars and Names */}

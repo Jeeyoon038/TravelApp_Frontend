@@ -18,7 +18,6 @@ export default function PhotoDetailPage() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [creator, setCreator] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
@@ -42,7 +41,6 @@ export default function PhotoDetailPage() {
 
         // Trip 정보 가져오기 (예: 작성자 정보)
         // 실제 API 호출이 필요하다면 이 부분 추가
-        setCreator("Unknown Author"); // 예제: Unknown으로 표시
       } catch (err) {
         console.error("Error fetching metadata:", err);
         setError("Failed to load photo metadata.");
