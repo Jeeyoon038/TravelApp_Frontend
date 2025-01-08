@@ -1,23 +1,35 @@
 // src/utils/exifMetadataExtractor.ts
+
 import EXIF from 'exifr';
 import { v4 as uuidv4 } from "uuid";
 
+/**
+ * Interface representing the metadata extracted from an image.
+ */
 export interface Metadata {
   latitude: number | null;
   longitude: number | null;
   taken_at: string | null;
   image_id: string;
   image_url: string;
-  //pH?: number | null;
+  // pH?: number | null; // Uncomment if pH data is required in the future
 }
 
+/**
+ * Extracts metadata from an array of image URLs.
+ * @param imageUrls - Array of image URLs to process.
+ * @returns A promise that resolves to an array of Metadata objects.
+ */
 export const extractMetadataFromUrls = async (imageUrls: string[]): Promise<Metadata[]> => {
   const promises = imageUrls.map((url) => {
     return new Promise<Metadata>((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'Anonymous'; // To handle CORS
+      img.crossOrigin = 'Anonymous'; // To handle CORS issues
       img.src = url;
 
+      /**
+       * Handles successful image load by extracting EXIF data.
+       */
       img.onload = () => {
         try {
           EXIF.parse(img).then((exifData) => {
@@ -26,21 +38,19 @@ export const extractMetadataFromUrls = async (imageUrls: string[]): Promise<Meta
             const longitude = exifData.GPSLongitude;
             const longitudeRef = exifData.GPSLongitudeRef;
             const dateTime = exifData.DateTimeOriginal;
-            //const pH = exifData.pH;
+            // const pH = exifData.pH; // Uncomment if pH data is required
 
-            // Convert GPS coordinates to decimal
+            // Convert GPS coordinates to decimal format
             const lat = latitude && latitudeRef ? gpsToDecimal(latitude, latitudeRef) : null;
             const lon = longitude && longitudeRef ? gpsToDecimal(longitude, longitudeRef) : null;
-            //const taken_at = exifData?.DateTimeOriginal ? new Date(exifData.DateTimeOriginal).toISOString() : null;
 
-            
             const metadata: Metadata = {
               latitude: lat,
               longitude: lon,
               taken_at: dateTime || null,
               image_id: uuidv4(),
               image_url: url,
-              //pH: pH ?? null,
+              // pH: pH ?? null, // Uncomment if pH data is required
             };
 
             console.log(`Metadata extracted from ${url}:`, metadata);
@@ -53,7 +63,7 @@ export const extractMetadataFromUrls = async (imageUrls: string[]): Promise<Meta
               taken_at: null,
               image_id: uuidv4(),
               image_url: url,
-              //pH: null,
+              // pH: null, // Uncomment if pH data is required
             });
           });
         } catch (error) {
@@ -64,11 +74,14 @@ export const extractMetadataFromUrls = async (imageUrls: string[]): Promise<Meta
             taken_at: null,
             image_id: uuidv4(),
             image_url: url,
-            //pH: null,
+            // pH: null, // Uncomment if pH data is required
           });
         }
       };
 
+      /**
+       * Handles image load errors by resolving with default metadata.
+       */
       img.onerror = () => {
         console.error(`Failed to load image from URL: ${url}`);
         resolve({
@@ -77,19 +90,24 @@ export const extractMetadataFromUrls = async (imageUrls: string[]): Promise<Meta
           taken_at: null,
           image_id: uuidv4(),
           image_url: url,
-          //pH: null,
+          // pH: null, // Uncomment if pH data is required
         });
       };
     });
   });
 
+  // Wait for all metadata extraction promises to resolve
   return Promise.all(promises);
 };
 
+/**
+ * Converts GPS coordinates from degrees, minutes, seconds to decimal format.
+ * @param gpsData - Array containing degrees, minutes, and seconds.
+ * @param hem - Hemisphere indicator ('N', 'S', 'E', 'W').
+ * @returns The decimal representation of the GPS coordinate.
+ */
 const gpsToDecimal = (gpsData: number[], hem: string): number => {
-  let d = gpsData[0];
-  let m = gpsData[1];
-  let s = gpsData[2];
-  let dec = d + m / 60 + s / 3600;
-  return (hem === 'S' || hem === 'W') ? dec * -1 : dec;
+  const [degrees, minutes, seconds] = gpsData;
+  let decimal = degrees + minutes / 60 + seconds / 3600;
+  return (hem === 'S' || hem === 'W') ? decimal * -1 : decimal;
 };

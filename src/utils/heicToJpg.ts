@@ -4,35 +4,52 @@ import * as exifr from "exifr";
 import heic2any from "heic2any";
 import * as piexif from "piexifjs";
 
+/**
+ * Interface representing the extracted metadata from an image.
+ */
 export interface ImageMetadata {
-  [key: string]: any; // 필요한 경우 구체적인 메타데이터 필드를 정의
+  [key: string]: any; // Define specific metadata fields as needed
 }
 
-// 필요한 Exif 태그 ID를 수동으로 정의
+// -----------------------------------
+// 1) EXIF Tag Definitions
+// -----------------------------------
+
+/**
+ * Defines necessary EXIF tag IDs for different sections.
+ */
 const ImageIFD = {
-  Make: 0x010F,         // 271
-  Model: 0x0110,        // 272
-  DateTime: 0x0132,     // 306
-  Software: 0x0131,     // 305
-  // 필요한 다른 태그 ID 추가
+  Make: 0x010F,         // Tag ID 271
+  Model: 0x0110,        // Tag ID 272
+  DateTime: 0x0132,     // Tag ID 306
+  Software: 0x0131,     // Tag ID 305
+  // Add other tag IDs as needed
 };
 
 const ExifIFD = {
-  DateTimeOriginal: 0x9003, // 36867
-  // 필요한 다른 태그 ID 추가
+  DateTimeOriginal: 0x9003, // Tag ID 36867
+  // Add other tag IDs as needed
 };
 
 const GPSIFD = {
-  GPSLatitudeRef: 1, // 'N' 또는 'S'
+  GPSLatitudeRef: 1, // 'N' or 'S'
   GPSLatitude: 2,    // [degrees, minutes, seconds]
-  GPSLongitudeRef: 3, // 'E' 또는 'W'
+  GPSLongitudeRef: 3, // 'E' or 'W'
   GPSLongitude: 4,    // [degrees, minutes, seconds]
-  GPSAltitudeRef: 5,  // 0 = 해수면 위, 1 = 해수면 아래
-  GPSAltitude: 6,     // 미터 단위
-  // 필요한 다른 GPS 태그 ID 추가
+  GPSAltitudeRef: 5,  // 0 = above sea level, 1 = below sea level
+  GPSAltitude: 6,     // Altitude in meters
+  // Add other GPS tag IDs as needed
 };
 
-// 헬퍼 함수: ArrayBuffer를 Binary String으로 변환
+// -----------------------------------
+// 2) Helper Functions
+// -----------------------------------
+
+/**
+ * Converts an ArrayBuffer to a binary string.
+ * @param buffer - The ArrayBuffer to convert.
+ * @returns The resulting binary string.
+ */
 const arrayBufferToBinaryString = (buffer: ArrayBuffer): string => {
   let binary = '';
   const bytes = new Uint8Array(buffer);
@@ -43,7 +60,11 @@ const arrayBufferToBinaryString = (buffer: ArrayBuffer): string => {
   return binary;
 };
 
-// 헬퍼 함수: Binary String을 ArrayBuffer로 변환
+/**
+ * Converts a binary string to an ArrayBuffer.
+ * @param binary - The binary string to convert.
+ * @returns The resulting ArrayBuffer.
+ */
 const binaryStringToArrayBuffer = (binary: string): ArrayBuffer => {
   const buffer = new ArrayBuffer(binary.length);
   const view = new Uint8Array(buffer);
@@ -53,24 +74,36 @@ const binaryStringToArrayBuffer = (binary: string): ArrayBuffer => {
   return buffer;
 };
 
-// 헬퍼 함수: 날짜 형식 변환 (Date 객체 또는 ISO 문자열을 EXIF 형식으로 변환)
+/**
+ * Formats a date object or ISO string into EXIF DateTime format.
+ * @param date - The date to format.
+ * @returns The formatted date string.
+ */
 const formatDateTime = (date: string | Date): string => {
   const d = typeof date === "string" ? new Date(date) : date;
   const pad = (n: number) => (n < 10 ? '0' + n : n);
   return `${d.getFullYear()}:${pad(d.getMonth() + 1)}:${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-// 헬퍼 함수: 소수형 GPS 좌표를 [도, 분, 초] 형식의 배열로 변환
+/**
+ * Converts decimal GPS coordinates to degrees, minutes, and seconds (DMS) format.
+ * @param coord - The decimal coordinate.
+ * @returns An array representing [degrees, minutes, seconds].
+ */
 const convertDecimalToDMS = (coord: number): [number, number, number] => {
   const absolute = Math.abs(coord);
   const degrees = Math.floor(absolute);
   const minutesNotTruncated = (absolute - degrees) * 60;
   const minutes = Math.floor(minutesNotTruncated);
-  const seconds = Math.round((minutesNotTruncated - minutes) * 60 * 1000) / 1000; // 소수점 3자리까지
+  const seconds = Math.round((minutesNotTruncated - minutes) * 60 * 1000) / 1000; // Rounded to 3 decimal places
   return [degrees, minutes, seconds];
 };
 
-// 헬퍼 함수: DMS를 Exif 형식의 분수로 변환
+/**
+ * Converts DMS coordinates to EXIF fractional format.
+ * @param dms - The DMS coordinate array.
+ * @returns An array of [numerator, denominator] pairs for each DMS component.
+ */
 const dmsToExif = (dms: [number, number, number]) => {
   return dms.map(value => {
     const numerator = Math.floor(value * 1000);
@@ -79,13 +112,17 @@ const dmsToExif = (dms: [number, number, number]) => {
   });
 };
 
-// 메타데이터를 Exif 객체로 변환
+/**
+ * Maps extracted metadata to EXIF object structure.
+ * @param metadata - The metadata to convert.
+ * @returns An object containing zeroth, Exif, and GPS EXIF data.
+ */
 const convertMetadataToExif = (metadata: ImageMetadata): any => {
   const zeroth: { [key: number]: any } = {};
   const exif: { [key: number]: any } = {};
   const gps: { [key: number]: any } = {};
 
-  // zeroth 섹션에 메타데이터 매핑
+  // Map metadata to zeroth IFD
   if (metadata.Make) {
     zeroth[ImageIFD.Make] = metadata.Make;
   }
@@ -99,13 +136,13 @@ const convertMetadataToExif = (metadata: ImageMetadata): any => {
     zeroth[ImageIFD.Software] = metadata.Software;
   }
 
-  // Exif 섹션에 메타데이터 매핑
+  // Map metadata to Exif IFD
   if (metadata.DateTimeOriginal) {
     exif[ExifIFD.DateTimeOriginal] = formatDateTime(metadata.DateTimeOriginal);
   }
-  // 필요한 다른 메타데이터 필드 추가
+  // Add other Exif metadata fields as needed
 
-  // GPS 섹션에 메타데이터 매핑
+  // Map metadata to GPS IFD
   if (metadata.latitude && metadata.longitude) {
     const latitude = metadata.latitude;
     const longitude = metadata.longitude;
@@ -127,22 +164,31 @@ const convertMetadataToExif = (metadata: ImageMetadata): any => {
   return { zeroth, Exif: exif, GPS: gps };
 };
 
-// HEIC 파일을 JPG로 변환하고 메타데이터를 삽입하는 함수
+// -----------------------------------
+// 3) HEIC to JPEG Conversion with Metadata Insertion
+// -----------------------------------
+
+/**
+ * Converts a HEIC file to JPEG and inserts extracted metadata into the JPEG's EXIF data.
+ * @param file - The HEIC file to convert.
+ * @returns A promise that resolves to the converted JPEG File object.
+ */
 export const convertHeicToJpgWithMetadata = async (file: File): Promise<File> => {
   try {
-    // 1. HEIC 파일에서 메타데이터 추출
+    // 1. Extract metadata from HEIC file using exifr
     const metadata = await exifr.parse(file, { translateValues: true }) || {};
 
-    // 2. HEIC를 JPG로 변환
+    // 2. Convert HEIC to JPEG using heic2any
     const blob = await heic2any({
       blob: file,
       toType: "image/jpeg",
-      quality: 0.8, // 필요한 경우 품질 조정
+      quality: 0.8, // Adjust quality as needed
     }) as Blob;
+
     const arrayBuffer = await blob.arrayBuffer();
     const binaryString = arrayBufferToBinaryString(arrayBuffer);
 
-    // 3. 메타데이터를 JPG에 삽입
+    // 3. Convert extracted metadata to EXIF format
     const exifObj = convertMetadataToExif(metadata);
     const completeExif = {
       "0th": exifObj.zeroth,
@@ -153,33 +199,54 @@ export const convertHeicToJpgWithMetadata = async (file: File): Promise<File> =>
       "thumbnail": null,
     };
     const exifBytes = piexif.dump(completeExif);
+
+    // 4. Insert EXIF data into the JPEG binary string
     const newBinaryString = piexif.insert(exifBytes, binaryString) as unknown as string;
 
-    // 4. 새로운 Blob과 File 생성
+    // 5. Convert the modified binary string back to an ArrayBuffer and then to a Blob
     const newArrayBuffer = binaryStringToArrayBuffer(newBinaryString);
     const newBlob = new Blob([newArrayBuffer], { type: "image/jpeg" });
+
+    // 6. Create a new JPEG File object with the modified Blob
     const jpgFile = new File([newBlob], file.name.replace(/\.heic$/i, ".jpg"), {
       type: "image/jpeg",
     });
+
     return jpgFile;
   } catch (error) {
-    console.error("HEIC 파일을 JPG로 변환하고 메타데이터를 삽입하는 중 오류가 발생했습니다.", error);
-    throw new Error("HEIC 파일을 JPG로 변환하는 중 오류가 발생했습니다.");
+    console.error("Error converting HEIC to JPEG and inserting metadata:", error);
+    throw new Error("Failed to convert HEIC file to JPEG.");
   }
 };
 
-// 메타데이터 추출 함수 (기존)
+// -----------------------------------
+// 4) EXIF Metadata Extraction
+// -----------------------------------
+
+/**
+ * Extracts metadata from an image file using exifr.
+ * @param file - The image file from which to extract metadata.
+ * @returns A promise that resolves to an ImageMetadata object.
+ */
 export const extractMetadata = async (file: File): Promise<ImageMetadata> => {
   try {
     const metadata = await exifr.parse(file, { translateValues: true });
     return metadata || {};
   } catch (error) {
-    console.warn(`메타데이터 추출 실패: ${file.name}`, error);
+    console.warn(`Failed to extract metadata from ${file.name}:`, error);
     return {};
   }
 };
 
-// 파일을 처리하는 메인 함수
+// -----------------------------------
+// 5) File Processing Function
+// -----------------------------------
+
+/**
+ * Processes an array of image files by converting HEIC files to JPEG and extracting metadata.
+ * @param files - An array of image File objects to process.
+ * @returns A promise that resolves to an array of objects containing the processed File and its metadata.
+ */
 export const processFiles = async (files: File[]): Promise<{ file: File; metadata: ImageMetadata }[]> => {
   const processedImages: { file: File; metadata: ImageMetadata }[] = [];
 
@@ -188,15 +255,16 @@ export const processFiles = async (files: File[]): Promise<{ file: File; metadat
     let metadata: ImageMetadata = {};
 
     if (file.type === "image/heic" || file.type === "image/heif") {
-      // HEIC 파일을 JPG로 변환하고 메타데이터 보존
+      // Convert HEIC files to JPEG and preserve metadata
       try {
         processedFile = await convertHeicToJpgWithMetadata(file);
-        metadata = await exifr.parse(file, { translateValues: true }) || {}; // 원본 HEIC에서 메타데이터 추출
+        metadata = await exifr.parse(file, { translateValues: true }) || {}; // Extract metadata from original HEIC
       } catch (error) {
-        console.error(`HEIC 변환 실패: ${file.name}`, error);
-        continue; // 변환 실패 시 해당 파일은 건너뜁니다.
+        console.error(`Failed to convert HEIC file ${file.name}:`, error);
+        continue; // Skip this file if conversion fails
       }
     } else {
+      // For non-HEIC files, use the original file and extract metadata
       processedFile = file;
       metadata = await extractMetadata(file);
     }

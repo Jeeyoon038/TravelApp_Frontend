@@ -1,5 +1,5 @@
 //googleuser.ts
-export interface GogoleUser {
+export interface GoogleUser {
     _id: string;
     googleId: string;
     email: string;

@@ -1,4 +1,4 @@
-// GroupDetail.tsx
+// src/components/GroupDetail.tsx
 
 import {
   Box,
@@ -6,7 +6,7 @@ import {
   Image as ChakraImage,
   Flex,
   Text,
-  useToast
+  useToast,
 } from "@chakra-ui/react";
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -14,40 +14,89 @@ import { FiPlus } from "react-icons/fi";
 import { Group } from "../types/group";
 import { processFiles } from "../utils/heicToJpg";
 import AddImagesModal from "./AddImageModal";
-import AddMemberModal from "./AddMemberModal"; // <-- Import your member modal here
+import AddMemberModal from "./AddMemberModal"; // Import for member invitation modal
 import GroupGallery from "./GroupGallery";
 
+// Environment variables and API base URL configuration
 const apiUrl = import.meta.env.VITE_API_URL;
 const API_BASE_URL = `${apiUrl}/`;
-const MotionBox = motion(Box);
-const MotionImage = motion(ChakraImage);
-const MotionHeader = motion(Box);
 
+// Motion-enhanced Chakra UI components for animations
+const MotionBox = motion.create(Box);
+const MotionImage = motion.create(ChakraImage);
+const MotionHeader = motion.create(Box);
+
+/**
+ * Interface representing geographical coordinates.
+ */
+interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Extends PhotoMetadata with the original image source URL.
+ */
+interface ExtendedPhoto extends PhotoMetadata {
+  originalSrc: string;
+}
+
+/**
+ * Represents a group of photos categorized by date and location.
+ */
+interface PhotoGroup {
+  dateKey: string;
+  locationKey: string;
+  photos: ExtendedPhoto[];
+}
+
+/**
+ * Props for the GroupDetail component.
+ */
 interface GroupDetailProps {
   group: Group;
   isHeaderCollapsed: boolean;
 }
 
+/**
+ * GroupDetail Component
+ * Displays detailed information about a specific group, including photos and members.
+ * Provides functionality to upload images and invite new members.
+ */
 export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailProps) {
+  // State to manage the expansion of member icons
   const [areIconsExpanded, setAreIconsExpanded] = useState(false);
+  // State to track the current image index in the gallery
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
+  // State to determine the direction of slide animation
   const [slideDirection, setSlideDirection] = useState<number>(1);
+  // State to control the visibility of the image upload modal
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  // State to control the visibility of the member invitation modal
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  // Reference to hold the interval timer for automatic image sliding
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Chakra UI toast for user notifications
   const toast = useToast();
 
+  /**
+   * Effect hook to initiate automatic image sliding when multiple images are present.
+   * Cleans up the interval timer on component unmount or when dependencies change.
+   */
   useEffect(() => {
     if (group.image_urls && group.image_urls.length > 1) {
       timerRef.current = setInterval(() => {
         moveToNext();
-      }, 5000);
+      }, 5000); // Slide every 5 seconds
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [group.image_urls]);
 
+  /**
+   * Advances the gallery to the next image.
+   */
   const moveToNext = () => {
     setSlideDirection(1);
     setCurrentGalleryIndex((prevIndex) => {
@@ -56,6 +105,9 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     });
   };
 
+  /**
+   * Moves the gallery to the previous image.
+   */
   const moveToPrev = () => {
     setSlideDirection(-1);
     setCurrentGalleryIndex((prevIndex) => {
@@ -64,6 +116,11 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     });
   };
 
+  /**
+   * Handles the end of a drag gesture to navigate through the gallery.
+   * @param _e - The event object.
+   * @param info - Information about the drag gesture.
+   */
   const handleDragEnd = (_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const offsetX = info.offset.x;
     if (offsetX > 100) {
@@ -73,29 +130,33 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     }
   };
 
+  /**
+   * Toggles the expansion state of member icons.
+   */
   const handleIconToggle = () => {
     setAreIconsExpanded((prev) => !prev);
   };
 
-  // -----------------------------
-  //  Modal open/close handlers
-  // -----------------------------
+  // Modal open and close handlers for image upload
   const onOpenImageModal = () => setIsImageModalOpen(true);
   const onCloseImageModal = () => setIsImageModalOpen(false);
 
+  // Modal open and close handlers for member invitation
   const onOpenMemberModal = () => setIsMemberModalOpen(true);
   const onCloseMemberModal = () => setIsMemberModalOpen(false);
 
-  // -----------------------------
-  //   Image Upload Logic
-  // -----------------------------
+  /**
+   * Uploads image files to the backend and retrieves their URLs.
+   * @param files - Array of image files to upload.
+   * @returns Promise resolving to an array of image URLs.
+   */
   const uploadImages = async (files: File[]): Promise<string[]> => {
     const imageUrls: string[] = [];
     for (const file of files) {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch(`${API_BASE_URL}upload/image`, {
+      const response = await fetch(`${process.env.VITE_API_URL}/upload/image`, {
         method: "POST",
         body: formData,
       });
@@ -109,14 +170,22 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     return imageUrls;
   };
 
+  /**
+   * Handles the image upload process, including processing files, uploading them,
+   * and sending metadata to the backend.
+   * @param files - Array of image files to upload.
+   */
   const handleImageUpload = async (files: File[]) => {
     try {
+      // Convert HEIC files to JPEG and extract metadata
       const processed = await processFiles(files);
       const jpgFiles = processed.map((img) => img.file);
       const metadata = processed.map((img) => img.metadata);
 
+      // Upload processed images and retrieve their URLs
       const uploadedImageUrls = await uploadImages(jpgFiles);
 
+      // Send image URLs and metadata to the backend
       const response = await fetch(`${API_BASE_URL}trips/${group.trip_id}/images`, {
         method: "POST",
         headers: {
@@ -132,6 +201,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         throw new Error("Failed to update trip images");
       }
 
+      // Notify user of successful upload
       toast({
         title: "이미지 업로드 성공",
         description: "새로운 이미지가 추가되었습니다.",
@@ -141,6 +211,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
       });
     } catch (error) {
       console.error("Error uploading images:", error);
+      // Notify user of upload failure
       toast({
         title: "업로드 실패",
         description: "이미지 업로드 중 오류가 발생했습니다.",
@@ -152,12 +223,13 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     }
   };
 
-  // -----------------------------
-  //   Member Invite Logic
-  // -----------------------------
+  /**
+   * Handles inviting a new member to the group via email.
+   * @param email - The email address of the member to invite.
+   */
   const handleAddMember = async (email: string) => {
     try {
-      // Example: Invite a member via an API call
+      // Send invitation request to the backend API
       const response = await fetch(`${API_BASE_URL}trips/${group.trip_id}/invite`, {
         method: "POST",
         headers: {
@@ -170,6 +242,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         throw new Error("Failed to invite member");
       }
 
+      // Notify user of successful invitation
       toast({
         title: "초대 성공",
         description: `${email}님을 그룹에 초대했습니다.`,
@@ -179,6 +252,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
       });
     } catch (error) {
       console.error("Error inviting member:", error);
+      // Notify user of invitation failure
       toast({
         title: "초대 실패",
         description: "멤버 초대 중 오류가 발생했습니다.",
@@ -190,9 +264,9 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     }
   };
 
-  // -----------------------------
-  //   Framer Motion Variants
-  // -----------------------------
+  /**
+   * Variants for slide animations using Framer Motion.
+   */
   const slideVariants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 300 : -300,
@@ -210,6 +284,9 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     }),
   };
 
+  /**
+   * Variants for fade animations using Framer Motion.
+   */
   const fadeVariants = {
     enter: {
       opacity: 0,
@@ -224,6 +301,9 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     },
   };
 
+  /**
+   * Variants for header expansion and collapse animations.
+   */
   const headerVariants = {
     expanded: {
       height: "300px",
@@ -242,6 +322,9 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     },
   };
 
+  /**
+   * Variants for overlay fade animations using Framer Motion.
+   */
   const overlayVariants = {
     visible: {
       opacity: 1,
@@ -253,18 +336,22 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     },
   };
 
-  // -----------------------------
-  //   Cover Image & Layout
-  // -----------------------------
+  /**
+   * Determines the current cover image based on the gallery index.
+   */
   const currentCoverImage =
     group.image_urls && group.image_urls.length > 0
       ? group.image_urls[currentGalleryIndex]
       : group.image_urls[0];
 
+  /**
+   * Sets the height of the cover image based on the header's collapsed state.
+   */
   const coverImageHeight = isHeaderCollapsed ? "250px" : "300px";
 
   return (
     <Box w="100%" mb={4}>
+      {/* Animated Header Section */}
       <MotionHeader
         variants={headerVariants}
         animate={isHeaderCollapsed ? "collapsed" : "expanded"}
@@ -275,6 +362,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         zIndex={isHeaderCollapsed ? 10 : "auto"}
         bg={isHeaderCollapsed ? "#FFFFFF" : "transparent"}
       >
+        {/* Cover Image with Slide/Fade Animations */}
         <Box position="relative" w="100%" h={coverImageHeight}>
           <AnimatePresence custom={slideDirection} mode="popLayout">
             <MotionImage
@@ -296,8 +384,10 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
           </AnimatePresence>
         </Box>
 
+        {/* Overlay and Action Buttons when Header is Collapsed */}
         {isHeaderCollapsed && (
           <>
+            {/* Overlay for aesthetic fade effect */}
             <AnimatePresence>
               <MotionBox
                 variants={overlayVariants}
@@ -314,6 +404,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
               />
             </AnimatePresence>
 
+            {/* Action Buttons and Member Icons */}
             <AnimatePresence>
               <MotionBox
                 variants={overlayVariants}
@@ -325,7 +416,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                 left="20px"
                 zIndex={2}
               >
-                {/* Title and Date Section */}
+                {/* Title and Date Information */}
                 <Text fontSize="lg" fontWeight="bold" color="white" mb={1}>
                   {group.title}
                 </Text>
@@ -335,7 +426,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                     : group.start_date}
                 </Text>
 
-                {/* Buttons and Members Section */}
+                {/* Buttons for Image Upload and Member Invitation */}
                 <Flex alignItems="center" gap={3}>
                   <Button
                     size="sm"
@@ -363,6 +454,7 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                     Invite
                   </Button>
 
+                  {/* Member Icons with Expand/Collapse Functionality */}
                   <Flex onClick={handleIconToggle} cursor="pointer">
                     {group.member_google_ids.map((profileImage, index) => (
                       <MotionBox
@@ -397,19 +489,22 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         )}
       </MotionHeader>
 
-      {/* Expanded Header Content */}
+      {/* Expanded Header Content when not collapsed */}
       {!isHeaderCollapsed && (
         <Box px={3} mt={2} textAlign="left">
+          {/* Group Title */}
           <Text fontSize={20} fontWeight="bold" color="black" mb={-1}>
             {group.title}
           </Text>
-          
+
+          {/* Group End Date */}
           <Text fontSize={12} color="gray.600">
             {group.end_date instanceof Date
               ? group.end_date.toDateString()
               : group.end_date}
           </Text>
 
+          {/* Member Avatars and Names */}
           <Flex mt={3} alignItems="center">
             {group.member_google_ids.map((profileImage, index) => (
               <Box
@@ -434,11 +529,14 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         </Box>
       )}
 
+      {/* Spacer for layout consistency */}
       <Box mb={10} />
+
+      {/* Gallery of Group Photos */}
       <GroupGallery group={group} isHeaderCollapsed={isHeaderCollapsed} />
       <Box mb={100} />
 
-      {/* 1) Modal for uploading images */}
+      {/* Modal for Uploading Images */}
       <AddImagesModal
         isOpen={isImageModalOpen}
         onClose={onCloseImageModal}
@@ -446,12 +544,11 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
         tripId={group.trip_id.toString()}
       />
 
-      {/* 2) Modal for inviting members (replaced AddImagesModal) */}
+      {/* Modal for Inviting Members */}
       <AddMemberModal
         isOpen={isMemberModalOpen}
         onClose={onCloseMemberModal}
         onAddMember={handleAddMember}
       />
     </Box>
-  );
-}
+  );};

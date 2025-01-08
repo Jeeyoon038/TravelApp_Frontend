@@ -1,128 +1,158 @@
-
-//LoginPage.tsx
-import { Box, Button, HStack, Icon, IconProps, Text, VStack } from "@chakra-ui/react";
-import { SVGProps, useEffect } from "react";
+// ./pages/LoginPage.tsx
+import { Box, Button, Center, Image, Text, useToast } from "@chakra-ui/react";
+import { useGoogleLogin, TokenResponse } from "@react-oauth/google";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { JSX } from "react/jsx-runtime";
-
-// 구글 공식 SVG 아이콘을 인라인으로 정의
-const GoogleIcon = (props: JSX.IntrinsicAttributes & Omit<SVGProps<SVGSVGElement>, "as" | "translate" | keyof IconProps> & { htmlTranslate?: "yes" | "no" | undefined; } & IconProps & { as?: "svg" | undefined; }) => (
-  <Icon viewBox="0 0 533.5 544.3" {...props}>
-    <path
-      fill="#4285F4"
-      d="M533.5 278.4c0-17.4-1.5-34-4.4-50.2H272v95.1h146.9c-6.3 34-25 62.8-53.3 82.1v68h86.2c50.4-46.4 79.6-114.6 79.6-194.9z"
-    />
-    <path
-      fill="#34A853"
-      d="M272 544.3c72.8 0 133.8-24.1 178.5-65.3l-86.2-68c-24 16.1-54.6 25.6-92.3 25.6-70.8 0-130.8-47.9-152-112.3H34.3v70.3c45.6 90.3 138.2 152 237.7 152z"
-    />
-    <path
-      fill="#FBBC05"
-      d="M120 324.6c-10.4-30.8-10.4-64.3 0-95.1v-70.3H34.3c-35.1 69.9-35.1 152.4 0 222.3l85.7-70.3z"
-    />
-    <path
-      fill="#EA4335"
-      d="M272 107.7c39.5 0 75.1 13.6 103 40.3l77.2-77.2C403.8 24.1 344.8 0 272 0 172.5 0 80 61.7 34.3 152l85.7 70.3c21.2-64.4 81.2-112.3 152-112.3z"
-    />
-  </Icon>
-);
+import { useState } from 'react';
+import { GoogleUser } from '../types/googleuser'; // Adjust the import path as necessary
+import { GoogleUserInfo } from '../types/googleUserInfo'; // Import the new interface
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  //const toast = useToast();
+  const toast = useToast();
+  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const email = params.get('email');
-    const name = params.get('name');
-    const photo = params.get('photo');
-    //const googleId = params.get('googleId');
-  
-    console.log('LoginPage: Parameters:', { email, name, photo });
-  
-    if (email && name && photo) {
-      localStorage.setItem('user_email', email);
-      localStorage.setItem('user_name', name);
-      localStorage.setItem('user_photo', photo);
-      //localStorage.setItem('user_google_id', googleId);
-      console.log('LoginPage: Data saved to localStorage');
-      navigate('/home');
-    } else {
-      // Check if already logged in
-      const storedEmail = localStorage.getItem('user_email');
-      //const storedGoogleId = localStorage.getItem('user_google_id');
-      if (storedEmail ) {
-        console.log('LoginPage: Found existing login');
-        navigate('/home');
+  const login = useGoogleLogin({
+    onSuccess: async (response: TokenResponse) => {
+      console.log('Google OAuth success response:', response);
+      setIsLoading(true);
+
+      try {
+        if (!response.access_token) {
+          throw new Error("No access token received from Google.");
+        }
+
+        // Fetch user info from Google using the correct interface
+        const userInfoResponse = await axios.get<GoogleUserInfo>(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: {
+              Authorization: `Bearer ${response.access_token}`,
+            },
+          }
+        );
+
+        console.log('Google user info received:', userInfoResponse.data);
+
+        // Destructure the necessary fields from GoogleUserInfo
+        const {
+          sub: googleId,
+          email,
+          name: displayName,
+          picture: photo,
+          given_name: firstName = '',
+          family_name: lastName = '',
+        } = userInfoResponse.data;
+
+        // Construct the GoogleUser object
+        const user: GoogleUser = {
+          _id: '', // Will be populated by the backend
+          googleId,
+          email,
+          firstName,
+          displayName,
+          lastName,
+          photo,
+          accessToken: response.access_token,
+          createdAt: '', // Will be populated by the backend
+          updatedAt: '', // Will be populated by the backend
+          __v: 0,        // Will be populated by the backend
+        };
+
+        // Store user data in localStorage (only frontend-relevant fields)
+        localStorage.setItem('user_google_id', user.googleId);
+        localStorage.setItem('user_email', user.email);
+        localStorage.setItem('user_firstName', user.firstName);
+        localStorage.setItem('user_displayName', user.displayName);
+        localStorage.setItem('user_lastName', user.lastName);
+        localStorage.setItem('user_photo', user.photo);
+        localStorage.setItem('access_token', user.accessToken);
+
+        try {
+          // Send user data to backend
+          const backendResponse = await axios.post(
+            `${apiBaseUrl}/auth/google/callback`,
+            {
+              googleId: user.googleId,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              displayName: user.displayName,
+              photo: user.photo,
+              accessToken: user.accessToken,
+            }
+          );
+
+          console.log('Backend response:', backendResponse);
+        } catch (backendError) {
+          console.error('Backend error:', backendError);
+          // Optionally, handle backend errors here (e.g., notify the user)
+        }
+
+        // Show success toast
+        toast({
+          title: "로그인 성공",
+          description: "환영합니다!",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+
+        // Navigate to Home page
+        navigate('/home', { replace: true });
+
+      } catch (error: any) {
+        console.error('Login error:', error);
+        localStorage.clear();
+        
+        toast({
+          title: "로그인 실패",
+          description: error.message || "로그인 중 오류가 발생했습니다. 다시 시도해 주세요.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setIsLoading(false);
       }
+    },
+    onError: error => {
+      console.error('Google Login Failed:', error);
+      
+      toast({
+        title: "로그인 실패",
+        description: "Google 로그인 중 오류가 발생했습니다.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
-  }, [navigate]);
-
-  const handleGoogleLogin = () => {
-    // 백엔드 구글 OAuth 엔드포인트로 리디렉션
-    console.log("Starting Google Login");
-
-
-    const apiUrl = import.meta.env.VITE_API_URL;
-    window.location.href = `${apiUrl}/auth/google`;
-  };
+  });
 
   return (
-    <VStack 
-      spacing={6} 
-      align="center" 
-      justify="center" 
-      height="100vh" 
-      bg="#F2F2F2"
-    >
-      <Box 
-        p={6} 
-        borderWidth={1} 
-        borderRadius={10}
-        boxShadow="lg" 
-        bg="white"
-        width="90%"
-        maxW="400px"
-        height="20%"
-      >
-        <VStack spacing={6}>
-          <Text 
-            fontSize="2xl" 
-            textAlign="center" 
-            fontFamily="Roboto, sans-serif"
-            fontWeight="500"
-            mt={2}
-          >
-           Login to Travel Log
-          </Text>
-          
-          <Button
-            onClick={handleGoogleLogin}
-            variant="outline"
-            width="full"
-            height="50px"
-            borderRadius={20}
-            borderColor="gray.300"
-            bg="white"
-            boxShadow= {"0px 4px 4px rgba(0, 0, 0, 0.10)"}
-            _hover={{ bg: 'gray.50' }}
-            _active={{ bg: 'gray.100' }}
-            aria-label="구글로 로그인하기"
-          >
-            <HStack spacing={3}>
-              <GoogleIcon boxSize={5} />
-              <Text 
-                fontSize={16} 
-                fontWeight="500" 
-                color="gray.700"
-                fontFamily="Roboto, sans-serif"
-              >
-                Google 계정으로 로그인 하기
-              </Text>
-            </HStack>
-          </Button>
-        </VStack>
+    <Center h="100vh" bgGradient="linear(to-r, blue.200, purple.200)">
+      <Box bg="white" p={8} rounded="xl" shadow="2xl" textAlign="center" minW="300px">
+        <Image src="/logo.png" alt="Logo" mx="auto" mb={6} boxSize="100px" />
+        <Text fontSize="2xl" fontWeight="bold" mb={6}>
+          Welcome to Our App
+        </Text>
+        <Button
+          onClick={() => {
+            console.log('Login button clicked');
+            login();
+          }}
+          colorScheme="blue"
+          size="lg"
+          leftIcon={
+            <Image src="/google-icon.png" alt="Google" boxSize="20px" />
+          }
+          isLoading={isLoading}
+          loadingText="로그인 중"
+        >
+          Sign in with Google
+        </Button>
       </Box>
-    </VStack>
+    </Center>
   );
 }

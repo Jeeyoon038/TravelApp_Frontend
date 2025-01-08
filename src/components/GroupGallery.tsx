@@ -1,6 +1,11 @@
 // src/components/GroupGallery.tsx
 
-import { Box, Image as ChakraImage, Spinner, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Image as ChakraImage,
+  Spinner,
+  Text,
+} from "@chakra-ui/react";
 // import { useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
 import Masonry from "react-masonry-css";
@@ -10,6 +15,9 @@ import { Group } from "../types/group";
 import { getPhotoMetadata } from "../utils/getPhotoMetadata"; // Integrated function
 import { MapComponent } from "./MapComponent"; // Small map component
 
+/**
+ * Interface representing a photo in the gallery with extended metadata.
+ */
 interface GalleryPhoto {
   originalSrc: string;
   displaySrc: string;
@@ -23,24 +31,34 @@ interface GalleryPhoto {
   street: string | null;
 }
 
+/**
+ * Props for the GroupGallery component.
+ */
 interface GroupGalleryProps {
   group: Group;
   isHeaderCollapsed: boolean;
 }
 
-// Grouped sections
+/**
+ * Represents a group of photos categorized by date and location.
+ */
 interface PhotoGroup {
   dateKey: string;
   locationKey: string;
   photos: GalleryPhoto[];
 }
 
+/**
+ * Interface representing geographical coordinates.
+ */
 interface Coordinates {
   lat: number;
   lng: number;
 }
 
-// Pastel color palette + hashing
+/**
+ * Array of pastel colors used for dynamic styling based on grouping keys.
+ */
 const pastelColors = [
   '#f2f2f2',
   'blue.50',
@@ -54,6 +72,11 @@ const pastelColors = [
   'red.50',
 ];
 
+/**
+ * Generates a numeric hash from a given string.
+ * @param str - The input string to hash.
+ * @returns A numeric hash value.
+ */
 function hashString(str: string): number {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
@@ -62,12 +85,24 @@ function hashString(str: string): number {
   return hash;
 }
 
+/**
+ * Retrieves a pastel color based on a given key.
+ * @param key - The key to hash and map to a color.
+ * @returns A pastel color string.
+ */
 function getPastelColor(key: string): string {
   const index = Math.abs(hashString(key)) % pastelColors.length;
   return pastelColors[index];
 }
 
-// Helper function to calculate distance between two coordinates in kilometers
+/**
+ * Calculates the distance between two geographical coordinates using the Haversine formula.
+ * @param lat1 - Latitude of the first point.
+ * @param lon1 - Longitude of the first point.
+ * @param lat2 - Latitude of the second point.
+ * @param lon2 - Longitude of the second point.
+ * @returns Distance in kilometers.
+ */
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Radius of the earth in km
   const dLat = deg2rad(lat2 - lat1); 
@@ -75,44 +110,62 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
   const a = 
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    ; 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
   const d = R * c; // Distance in km
   return d;
 }
 
+/**
+ * Converts degrees to radians.
+ * @param deg - Degrees to convert.
+ * @returns Radians.
+ */
 function deg2rad(deg: number): number {
   return deg * (Math.PI / 180);
 }
 
+/**
+ * GroupGallery Component
+ * Displays a gallery of group photos organized by date and location.
+ * Provides functionality to navigate through photos and view details.
+ */
 export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryProps) {
   const navigate = useNavigate();
 
+  // State to hold the list of gallery photos with metadata
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
+  // State to indicate if photos are currently being loaded
   const [isLoading, setIsLoading] = useState(false);
+  // State to capture any errors during photo loading
   const [error, setError] = useState<string | null>(null);
 
+  // Reference to the gallery container for scrolling purposes
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  // Google Maps API load
+  // Google Maps API load (commented out as it's not currently used)
   // const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
   // const { isLoaded, loadError } = useJsApiLoader({
   //   googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   // });
 
-  // 1) Load photo metadata
+  /**
+   * Effect hook to load photo metadata when the group images change.
+   */
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
     setError(null);
 
+    /**
+     * Asynchronously loads metadata for each photo in the group.
+     */
     async function loadMetadata() {
       try {
         const array: GalleryPhoto[] = [];
 
         for (const src of group.image_urls) {
-          // getPhotoMetadata already handles EXIF + HEIC + reverse geocoding
+          // getPhotoMetadata handles EXIF extraction, HEIC conversion, and reverse geocoding
           const meta = await getPhotoMetadata(src);
 
           array.push({
@@ -129,7 +182,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
           });
         }
 
-        // Sort by date ascending (photos without dates go to the end)
+        // Sort photos by date in ascending order; photos without dates go to the end
         array.sort((a, b) => {
           if (a.date && b.date) return a.date.getTime() - b.date.getTime();
           if (a.date) return -1;
@@ -150,12 +203,15 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
     loadMetadata();
 
+    // Cleanup function to prevent state updates if the component is unmounted
     return () => {
       isMounted = false;
     };
   }, [group.image_urls]);
 
-  // 2) Scroll to gallery when header is collapsed
+  /**
+   * Effect hook to scroll the gallery into view when the header is collapsed.
+   */
   useEffect(() => {
     if (isHeaderCollapsed && galleryRef.current) {
       const OFFSET = 80;
@@ -168,7 +224,11 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     }
   }, [isHeaderCollapsed]);
 
-  // 3) Group photos by date and location with 3km constraint
+  /**
+   * Groups photos by their date and location, considering a 3km distance constraint for location grouping.
+   * @param photos - Array of GalleryPhoto objects to group.
+   * @returns An array of PhotoGroup objects.
+   */
   function groupPhotosByDateAndLocation(photos: GalleryPhoto[]): PhotoGroup[] {
     const result: PhotoGroup[] = [];
     let currentDateGroup: PhotoGroup | null = null;
@@ -194,12 +254,12 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
         );
 
         if (distance > 3) {
-          locationKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+          locationKey = `${lat!.toFixed(3)},${lng!.toFixed(3)}`;
           lastLocation = { lat, lng };
         }
       } else if (hasLocation) {
         locationKey = `${lat!.toFixed(3)},${lng!.toFixed(3)}`;
-        lastLocation = { lat: lat!, lng: lng! };
+        lastLocation = { lat, lng };
       }
 
       if (!currentDateGroup || currentDateGroup.dateKey !== dateKey) {
@@ -228,12 +288,17 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     return result;
   }
 
-  // 4) Click on image to navigate
+  /**
+   * Navigates to the photo detail page when a photo is clicked.
+   * @param photo - The GalleryPhoto object that was clicked.
+   */
   const handleClickPhoto = (photo: GalleryPhoto) => {
     navigate("/photo-detail", { state: { trip_id: group.trip_id, image_url: photo.originalSrc } });
   };
 
-  // 5) Masonry breakpoints
+  /**
+   * Defines responsive breakpoints for the Masonry layout.
+   */
   const breakpointColumnsObj = {
     default: 6,
     1200: 5,
@@ -243,16 +308,19 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
     0: 1,
   };
 
-  // 6) Month names array
+  // Array of abbreviated month names for display purposes
   const monthNames = [
     "Jan","Feb","Mar","Apr","May","Jun",
     "Jul","Aug","Sep","Oct","Nov","Dec",
   ];
 
-  // Grouped data with updated logic
+  // Group photos by date and location
   const groupedPhotoData = groupPhotosByDateAndLocation(photos);
 
-  // Items array: dateHeader → locationHeader → images
+  /**
+   * Flattens the grouped photo data into an array of items for rendering.
+   * Each item can be a date header, location header, or an image.
+   */
   const items = groupedPhotoData.flatMap((group, groupIdx) => {
     const arr: Array<
       { type: "dateHeader"; data: PhotoGroup } |
@@ -260,15 +328,15 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
       { type: "image"; data: GalleryPhoto }
     > = [];
 
-    // For each date group, add a dateHeader once
+    // Add a dateHeader if it's the first group or the date has changed
     if (groupIdx === 0 || groupedPhotoData[groupIdx - 1].dateKey !== group.dateKey) {
       arr.push({ type: "dateHeader", data: group });
     }
 
-    // Add locationHeader
+    // Add a locationHeader for each group
     arr.push({ type: "locationHeader", data: group });
 
-    // Add images
+    // Add each photo as an image item
     group.photos.forEach((p) => {
       arr.push({ type: "image", data: p });
     });
@@ -278,20 +346,22 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
 
   return (
     <Box ref={galleryRef} px={4} mb={4}>
-      {/* Loading/Error Display */}
+      {/* Display loading spinner while data is being fetched */}
       {isLoading && (
         <Box textAlign="center" my={4}>
           <Spinner size="lg" />
           <Text mt={2}>Loading data...</Text>
         </Box>
       )}
+
+      {/* Display error message if data fetching fails */}
       {error && (
         <Box textAlign="center" my={4}>
           <Text color="red.500">{error}</Text>
         </Box>
       )}
 
-      {/* Actual Masonry Layout */}
+      {/* Render the Masonry grid once data is loaded and no errors exist */}
       {!isLoading && !error && (
         <Masonry
           breakpointCols={breakpointColumnsObj}
@@ -390,6 +460,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
                   boxShadow="sm"
                   mb={4}
                 >
+                  {/* Display location details if available */}
                   {(country || city || state || postalCode || street) && (
                     <Box mb={2}>
                       {city && <Text fontWeight="bold" fontSize={24}>{city}</Text>}
@@ -399,6 +470,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
                     </Box>
                   )}
 
+                  {/* Display map if coordinates are available */}
                   {coordinates && (
                     <MapComponent
                       coordinates={coordinates}
@@ -410,7 +482,7 @@ export default function GroupGallery({ group, isHeaderCollapsed }: GroupGalleryP
                 </Box>
               );
             } else {
-              // image
+              // Render individual photo
               const photo = item.data;
               return (
                 <Box

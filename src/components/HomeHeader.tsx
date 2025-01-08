@@ -1,18 +1,3 @@
-// HomeHeader.tsx
-// Add this to a .d.ts file or at the top of your HomeHeader.tsx
-declare global {
-  interface Window {
-    google?: {
-      accounts?: {
-        oauth2?: {
-          revoke: (token: string | null) => void;
-        };
-      };
-    };
-  }
-}
-
-
 import { Box, Button, Flex, Text, Modal, ModalOverlay, ModalContent, 
   ModalHeader, ModalBody, ModalCloseButton, useDisclosure, 
   Icon, useToast} from "@chakra-ui/react";
@@ -34,7 +19,7 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
   const toast = useToast();
 
   const fetchUserData = useCallback(async () => {
-    const storedName = localStorage.getItem('user_name');
+    const storedName = localStorage.getItem('user_displayName'); // Updated to match login storage
     const storedPhoto = localStorage.getItem('user_photo');
     
     if (storedName && storedPhoto) {
@@ -51,44 +36,65 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
     fetchUserData();
   }, [fetchUserData]);
 
-// HomeHeader.tsx
-const handleLogout = async () => {
-  try {
-    // 1. Clear all localStorage
-    localStorage.clear();
-    
-    // 2. Reset user state
-    setUserData(null);
-    
-    // 3. Close modal
-    onClose();
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
 
-    // 4. Show success message
-    toast({
-      title: "로그아웃 성공",
-      description: "성공적으로 로그아웃되었습니다.",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
-    
-    // 5. Force reload the page while navigating to ensure clean state
-    window.location.href = '/';
+      // Close modal first
+      onClose();
 
-  } catch (error) {
-    console.error('Error during logout:', error);
-    toast({
-      title: "로그아웃 실패",
-      description: "로그아웃 중 오류가 발생했습니다. 다시 시도해주세요.",
-      status: "error",
-      duration: 3000,
-      isClosable: true,
-    });
-  }
-};
+      // Clear all localStorage
+      localStorage.clear();
+      
+      // Reset user state
+      setUserData(null);
+
+      // Revoke Google token if available
+      if (token && window.google?.accounts?.oauth2?.revoke) {
+        try {
+          await window.google.accounts.oauth2.revoke(token);
+        } catch (revokeError) {
+          console.error('Error revoking token:', revokeError);
+        }
+      }
+
+      // Show success message
+      toast({
+        title: "로그아웃 성공",
+        description: "성공적으로 로그아웃되었습니다.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Use a timeout to ensure toast is visible and prevent navigation throttling
+      setTimeout(() => {
+        // Use navigate instead of window.location for smoother transition
+        navigate('/', { replace: true });
+      }, 300);
+
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast({
+        title: "로그아웃 실패",
+        description: "로그아웃 중 오류가 발생했습니다. 다시 시도해주세요.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
 
   return (
-    <Box bg="white" boxShadow="md" borderTopRadius={0} borderBottomRadius={10} p={4}>
+    <Box 
+      bg="white" 
+      boxShadow="md" 
+      borderTopRadius={0} 
+      borderBottomRadius={10} 
+      p={4}
+      position="relative"
+      zIndex={1}
+    >
       <Text fontWeight="bold" fontSize={24} mb={3}>
         My Travel Log
       </Text>
@@ -130,7 +136,12 @@ const handleLogout = async () => {
       </Flex>
 
       {userData && (
-        <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <Modal 
+          isOpen={isOpen} 
+          onClose={onClose} 
+          isCentered
+          motionPreset="slideInBottom"
+        >
           <ModalOverlay />
           <ModalContent>
             <ModalHeader textAlign="center">Profile Settings</ModalHeader>
@@ -149,6 +160,12 @@ const handleLogout = async () => {
                   onClick={handleLogout}
                   mb={4}
                   width="full"
+                  position="relative"
+                  _hover={{
+                    transform: 'translateY(-1px)',
+                    boxShadow: 'md'
+                  }}
+                  transition="all 0.2s"
                 >
                   Logout
                 </Button>
