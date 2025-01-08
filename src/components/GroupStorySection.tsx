@@ -1,5 +1,4 @@
-
-import { Box} from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import MyGroupStoryScroll from "../components/MyGroupStoryScroll";
 import GroupDetail from "../components/GroupDetail";
 import { Group } from "../types/group";

@@ -1,4 +1,3 @@
-// GoogleProfile.tsx
 import { useEffect, useState } from 'react';
 import ProfileImage, { UserProfile } from './ProfileImage';
 
@@ -14,17 +13,19 @@ const GoogleProfile: React.FC = () => {
 
   useEffect(() => {
     const checkAuth = () => {
+      const googleId = localStorage.getItem('user_google_id');
       const email = localStorage.getItem('user_email');
       const name = localStorage.getItem('user_name');
       const photo = localStorage.getItem('user_photo');
 
-      if (email && name && photo) {
+      if (googleId && email && name && photo) {
+        const nameParts = name.split(' ');
         setUser({
-          googleId: '',
+          googleId,
           email,
           displayName: name,
-          firstName: name.split(' ')[0],
-          lastName: name.split(' ')[1] || '',
+          firstName: nameParts[0],
+          lastName: nameParts[1] || '',
           photo
         });
       }
@@ -35,8 +36,6 @@ const GoogleProfile: React.FC = () => {
     return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
-  // You'll need to implement your own login component here
-  // instead of using @react-oauth/google
   const handleLogin = () => {
     const apiUrl = import.meta.env.VITE_API_URL;
     window.location.href = `${apiUrl}/auth/google`;
