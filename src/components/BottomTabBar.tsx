@@ -18,7 +18,7 @@ export default function FloatingTabBar() {
       justify="center"
       align="center"
       position="fixed"
-      bottom="50px" // 위치를 화면 중앙에 가깝게 띄움
+      bottom="20px" // 위치를 화면 중앙에 가깝게 띄움
       left="50%"
       transform="translate(-50%, 0)"
       zIndex="1000"

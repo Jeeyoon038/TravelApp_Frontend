@@ -101,7 +101,7 @@ export default function Home() {
       setTimeout(() => {
         setShowWelcomeAnimation(false);
         localStorage.setItem("first_login", "false");
-      }, 8600); // Set duration for animation (e.g., 3 seconds)
+      }, 6000);
     }
     fetchGroups();
   }, []);
