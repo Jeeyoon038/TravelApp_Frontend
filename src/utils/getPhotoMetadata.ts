@@ -25,6 +25,7 @@ export interface PhotoMetadata {
   displaySrc: string;        // Final display image URL (used during HEIC conversion)
 }
 
+/* 
 // -----------------------------------
 // 2) API Key Configuration for Reverse Geocoding
 // -----------------------------------
@@ -42,7 +43,7 @@ const geocodeCache: {
     street: string | null;
   };
 } = {};
-
+*/
 // -----------------------------------
 // 4) reverseGeocode Function
 // -----------------------------------
@@ -54,6 +55,8 @@ const geocodeCache: {
  * @param lng - Longitude of the location.
  * @returns An object containing country, city, state, postalCode, and street information.
  */
+{/*
+
 async function reverseGeocode(
   lat: number,
   lng: number
@@ -129,6 +132,8 @@ async function reverseGeocode(
     return { country: null, city: null, state: null, postalCode: null, street: null };
   }
 }
+*/}
+
 
 // -----------------------------------
 // 5) Blob to DataURL Conversion
@@ -141,7 +146,7 @@ async function reverseGeocode(
  */
 async function blobToDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+    const reader = new (globalThis as any).FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === "string") {
         resolve(reader.result);
@@ -166,6 +171,8 @@ async function blobToDataURL(blob: Blob): Promise<string> {
  * @param buffer - The ArrayBuffer of the file.
  * @returns The MIME type as a string, or undefined if not recognized.
  */
+
+/*
 function getMimeType(buffer: ArrayBuffer): string | undefined {
   const view = new DataView(buffer);
 
@@ -191,7 +198,7 @@ function getMimeType(buffer: ArrayBuffer): string | undefined {
   // Add additional MIME type checks (e.g., PNG, GIF) as needed
   return undefined;
 }
-
+*/
 // -----------------------------------
 // 7) getPhotoMetadata Function
 //    - (1) Load ArrayBuffer + Identify MIME Type
