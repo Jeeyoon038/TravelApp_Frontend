@@ -114,6 +114,7 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
         mr={3} 
       />
 
+
       
     </Flex>
  
@@ -149,7 +150,7 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
           alignItems="center"
         >
           <Icon as={AddIcon} boxSize={3} mr={1} />
-          Add Your Story
+          New Trip
         </Button>
       </Flex>
 

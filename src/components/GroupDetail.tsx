@@ -285,6 +285,17 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
     }),
   };
 
+
+  const formatDate = (date: string) => {
+    const options: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    const parsedDate = new Date(date);
+    return new Intl.DateTimeFormat("ko-KR", options).format(parsedDate);
+  };
+
   /**
    * Variants for fade animations using Framer Motion.
    */
@@ -418,20 +429,15 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                 zIndex={2}
               >
                 {/* Title and Date Information */}
-                <Text fontSize="lg" fontWeight="bold" color="white" mb={1}>
+                <Text fontSize={30} fontWeight="bold" color="white" mb={-1}>
                   {group.title}
                 </Text>
-                <Text fontSize="sm" color="white" opacity={0.9} mb={3}>
-                  {group.start_date instanceof Date
-                    ? group.start_date.toDateString()
-                    : group.start_date}
-                </Text>
-                {/* Group End Date */}
-                <Text fontSize="sm" color="white" opacity={0.9} mb={3}>
-            {   group.end_date instanceof Date
-                ? group.end_date.toDateString()
-              : group.end_date}
-            </Text>
+                <Text fontSize="sm" color="white" opacity={0.9} mb={-0.5}>
+                  {formatDate(group.start_date)}부터
+              </Text>
+              <Text fontSize="sm" color="white" opacity={0.9} mb={3}>
+                  {formatDate(group.end_date)}까지
+              </Text>
 
                 {/* Buttons for Image Upload and Member Invitation */}
                 <Flex alignItems="center" gap={3}>
@@ -504,18 +510,14 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
             {group.title}
           </Text>
 
-          {/* Group Start Date */}
-          <Text fontSize={12} color="gray.600">
-                  {group.start_date instanceof Date
-                    ? group.start_date.toDateString()
-                    : group.start_date}
-                </Text>
-          {/* Group End Date */}
-          <Text fontSize={12} color="gray.600">
-            {group.end_date instanceof Date
-              ? group.end_date.toDateString()
-              : group.end_date}
-          </Text>
+           {/* Group Start Date */}
+           <Text fontSize={12} color="gray.600" mb={-0.5}>
+                  {formatDate(group.start_date)}부터
+              </Text>
+            {/* Group End Date */}
+            <Text fontSize={12} color="gray.600">
+                  {formatDate(group.end_date)}까지
+              </Text>
 
           {/* Member Avatars and Names */}
           <Flex mt={3} alignItems="center">

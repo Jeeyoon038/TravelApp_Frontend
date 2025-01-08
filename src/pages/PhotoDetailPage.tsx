@@ -1,6 +1,7 @@
-import { Box, Image as ChakraImage, Heading, Text } from "@chakra-ui/react";
+import { ArrowBackIcon } from "@chakra-ui/icons";
+import { Box, Button, Image as ChakraImage, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { MapComponent } from "../components/MapComponent";
 import { getPhotoMetadata } from "../utils/getPhotoMetadata"; // Metadata 함수 임포트
 
@@ -12,6 +13,7 @@ interface PhotoDetailLocationState {
 
 export default function PhotoDetailPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { trip_id, image_url } = (location.state as PhotoDetailLocationState) || {};
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -77,43 +79,54 @@ export default function PhotoDetailPage() {
   }
 
   return (
-    <Box p={4}>
-      <Heading size="md" mb={4}>
-        사진 상세 정보
-      </Heading>
+    <Box h="100vh" overflowY="auto">
+      {/* 뒤로가기 버튼 */}
+      <Button
+        top={4}
+        mx={3}
+        zIndex={10}
+        onClick={() => navigate(-1)}
+        bgColor="white"
+        fontWeight={300}
+        borderRadius="50%" // 버튼을 동그랗게 만듦
+        w="50px" // 버튼의 너비를 50px로 설정
+        h="50px" // 버튼의 높이를 50px로 설정
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        boxShadow="0px 4px 4px rgba(0, 0, 0, 0.1)" // 그림자 추가
+      >
+        <ArrowBackIcon w={6} h={6} /> {/* 아이콘 크기를 설정 */}
+      </Button>
 
-      <ChakraImage
-        src={image_url}
-        alt="detail-img"
-        w="100%"
-        maxW="500px"
-        borderRadius="md"
-        mb={4}
-      />
+      {/* 내용 */}
+      <Box >
+        <Box mt={5} mb={4} px={3}>
+          <Text fontWeight="bold" ml={3} fontSize={40}>{date || "Unknown"}</Text>
+          <Text fontWeight={300} mt={-2} ml={4} >멋있는 사진이네요!</Text>
+        </Box>
 
-      <Box mb={4}>
-        <Text fontWeight="bold">작성자</Text>
-        <Text>{creator || "Unknown"}</Text>
-      </Box>
+        <ChakraImage
+          src={image_url}
+          alt="detail-img"
+          w="90%" // 너비를 90%로 설정하여 화면에 여백을 추가
+          maxW="400px" // 사진의 최대 너비를 400px로 설정
+          borderRadius={20}
+          boxShadow="0px 4px 4px rgba(0, 0, 0, 0.10)"
+          mb={4}
+          mx="auto" // 좌우 여백을 동일하게 추가
+        />
 
-      <Box mb={4}>
-        <Text fontWeight="bold">촬영 날짜</Text>
-        <Text>{date || "Unknown"}</Text>
-      </Box>
-
-      <Box mb={4}>
-        <Text fontWeight="bold">위치 정보</Text>
-        <Text>
-          위도: {latitude || "Unknown"}, 경도: {longitude || "Unknown"}
-        </Text>
-        {latitude && longitude && (
-          <MapComponent
-            coordinates={{ lat: latitude, lng: longitude }}
-            location="촬영 위치"
-            isInteractive={false}
-            mapHeight="300px"
-          />
-        )}
+        <Box mb={20} p={8} px={8} borderRadius={20} boxShadow="0px 4px 4px rgba(0, 0, 0, 0.10)">
+          {latitude && longitude && (
+            <MapComponent
+              coordinates={{ lat: latitude, lng: longitude }}
+              location="촬영 위치"
+              isInteractive={false}
+              mapHeight="300px"
+            />
+          )}
+        </Box>
       </Box>
     </Box>
   );
