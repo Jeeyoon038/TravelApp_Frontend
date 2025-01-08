@@ -17,6 +17,8 @@ import NewTripModal from "../components/NewTripModal";
 import { Group } from "../types/group";
 
 
+
+
 // Define API_BASE_URL correctly
 const apiUrl = import.meta.env.VITE_API_URL;
 if (!apiUrl) {
@@ -40,6 +42,12 @@ export default function Home() {
   
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  //애니메이션
+  const [showWelcomeAnimation, setShowWelcomeAnimation] = useState<boolean>(
+  localStorage.getItem("first_login") !== "false"
+);
+
 
   /**
    * Fetches groups from the backend.
@@ -94,6 +102,12 @@ export default function Home() {
   };
 
   useEffect(() => {
+    if (showWelcomeAnimation) {
+      setTimeout(() => {
+        setShowWelcomeAnimation(false);
+        localStorage.setItem("first_login", "false");
+      }, 3000); // Set duration for animation (e.g., 3 seconds)
+    }
     fetchGroups();
   }, []);
 
@@ -187,6 +201,26 @@ export default function Home() {
 
   return (
     <Flex direction="column" h="100vh" bg="#F2F2F2">
+
+{showWelcomeAnimation && (
+        <Flex
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          bg="white"
+          justify="center"
+          align="center"
+          zIndex="100"
+        >
+          <img
+            src="/animations/travelmonster.gif"
+            alt="Welcome Animation"
+            style={{ maxWidth: "80%", maxHeight: "80%" }}
+          />
+        </Flex>
+      )}
       <Box
         flex="1"
         overflowY="auto"

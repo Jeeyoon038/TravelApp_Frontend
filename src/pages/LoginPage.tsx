@@ -1,9 +1,9 @@
 // ./pages/LoginPage.tsx
 import { Box, Button, Center, Image, Text, useToast } from "@chakra-ui/react";
-import { useGoogleLogin, TokenResponse } from "@react-oauth/google";
+import { TokenResponse, useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import { GoogleUser } from '../types/googleuser'; // Adjust the import path as necessary
 import { GoogleUserInfo } from '../types/googleUserInfo'; // Import the new interface
 
@@ -141,6 +141,9 @@ export default function LoginPage() {
           onClick={() => {
             console.log('Login button clicked');
             login();
+            if (!localStorage.getItem("first_login")) {
+              localStorage.setItem("first_login", "true"); // 첫 로그인 여부 저장
+            }
           }}
           colorScheme="blue"
           size="lg"
