@@ -12,6 +12,7 @@ import { AnimatePresence, motion, PanInfo } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FiPlus } from "react-icons/fi";
 import { Group } from "../types/group";
+//import { PhotoMetadata } from "../utils/getPhotoMetadata";
 import { processFiles } from "../utils/heicToJpg";
 import AddImagesModal from "./AddImageModal";
 import AddMemberModal from "./AddMemberModal"; // Import for member invitation modal
@@ -29,26 +30,26 @@ const MotionHeader = motion.create(Box);
 /**
  * Interface representing geographical coordinates.
  */
-interface Coordinates {
-  lat: number;
-  lng: number;
-}
+//interface Coordinates {
+  //lat: number;
+  //lng: number;
+//}
 
 /**
  * Extends PhotoMetadata with the original image source URL.
  */
-interface ExtendedPhoto extends PhotoMetadata {
-  originalSrc: string;
-}
+//interface ExtendedPhoto extends PhotoMetadata {
+  //originalSrc: string;
+//}
 
 /**
  * Represents a group of photos categorized by date and location.
  */
-interface PhotoGroup {
-  dateKey: string;
-  locationKey: string;
-  photos: ExtendedPhoto[];
-}
+//interface PhotoGroup {
+  //dateKey: string;
+  //locationKey: string;
+  //photos: ExtendedPhoto[];
+//}
 
 /**
  * Props for the GroupDetail component.

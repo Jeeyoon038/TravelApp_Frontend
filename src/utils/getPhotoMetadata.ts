@@ -2,7 +2,6 @@
 
 import exifr from "exifr";
 import heic2any from "heic2any"; // HEIC to JPEG conversion
-import { decode } from "libheif-js"; // HEIC metadata extraction
 
 /**
  * Note: heic2any operates only in the browser environment (not supported in Node.js).
@@ -221,50 +220,34 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
         throw new Error(`Failed to fetch image. Status: ${res.status}`);
       }
       arrayBuffer = await res.arrayBuffer();
-      mimeType = getMimeType(arrayBuffer);
+      mimeType = "image/jpeg"; // Assume JPEG for URL sources
     } else {
       // Source is a File object
       arrayBuffer = await source.arrayBuffer();
-      mimeType = getMimeType(arrayBuffer);
-      // Use the File's type as a fallback if MIME type is not identified
-      if (!mimeType && source.type) {
-        mimeType = source.type;
-      }
+      mimeType = source.type;
     }
 
-    // (B) If the image is HEIC/HEIF, extract metadata and convert to JPEG
-    let heicMetadata: Partial<PhotoMetadata> = {};
     let displaySrc = "";
 
+    // (B) If the image is HEIC, convert to JPEG using heic2any
     if (mimeType === "image/heic" || mimeType === "image/heif") {
-      try {
-        // Extract HEIC metadata using libheif-js
-        const heif = await decode(new Uint8Array(arrayBuffer));
-        if (heif && heif.metadata) {
-          // Example: Adjust based on the actual HEIC metadata structure
-          heicMetadata.date = heif.metadata.creation_time
-            ? new Date(heif.metadata.creation_time)
-            : null;
-          heicMetadata.latitude = heif.metadata.latitude || null;
-          heicMetadata.longitude = heif.metadata.longitude || null;
-          // Additional metadata extraction can be implemented here
-        }
-      } catch (heicError) {
-        console.error("Error extracting HEIC metadata:", heicError);
-      }
-
-      // Convert HEIC to JPEG
       const heicBlob = new Blob([arrayBuffer], { type: mimeType });
       const convertedBlob = (await heic2any({
         blob: heicBlob,
         toType: "image/jpeg",
         quality: 0.9,
       })) as Blob;
+
       // Reload ArrayBuffer and MIME type from the converted JPEG
       arrayBuffer = await convertedBlob.arrayBuffer();
       mimeType = convertedBlob.type;
+
       // Generate a Data URL for display purposes
       displaySrc = await blobToDataURL(convertedBlob);
+    } else {
+      // Generate a Data URL for non-HEIC files
+      const blob = new Blob([arrayBuffer], { type: mimeType || "image/jpeg" });
+      displaySrc = await blobToDataURL(blob);
     }
 
     // (C) Parse EXIF metadata using exifr
@@ -276,56 +259,26 @@ export async function getPhotoMetadata(source: string | File): Promise<PhotoMeta
       xmp: true,
     });
 
-    // Extract date
+    // Extract metadata
     const date: Date | null =
       exifMetadata?.DateTimeOriginal ||
       exifMetadata?.CreateDate ||
       exifMetadata?.DateTime ||
-      heicMetadata.date ||
       null;
 
-    // Extract GPS coordinates
-    const latitude: number | null = exifMetadata?.latitude ?? heicMetadata.latitude ?? null;
-    const longitude: number | null = exifMetadata?.longitude ?? heicMetadata.longitude ?? null;
+    const latitude: number | null = exifMetadata?.latitude ?? null;
+    const longitude: number | null = exifMetadata?.longitude ?? null;
 
-    // (D) Perform reverse geocoding if GPS data is available
-    let country: string | null = null;
-    let city: string | null = null;
-    let state: string | null = null;
-    let postalCode: string | null = null;
-    let street: string | null = null;
-
-    if (latitude && longitude) {
-      const location = await reverseGeocode(latitude, longitude);
-      country = location.country;
-      city = location.city;
-      state = location.state;
-      postalCode = location.postalCode;
-      street = location.street;
-    }
-
-    // (E) Determine the display source URL
-    if (!displaySrc) {
-      if (typeof source === "string") {
-        // If the source is a URL, use it directly
-        displaySrc = source;
-      } else {
-        // If the source is a File object, convert it to a Data URL
-        const jpegBlob = new Blob([arrayBuffer], { type: mimeType || "image/jpeg" });
-        displaySrc = await blobToDataURL(jpegBlob);
-      }
-    }
-
-    // Return the structured metadata
+    // (D) Return metadata
     return {
       date,
       latitude,
       longitude,
-      country,
-      city,
-      state,
-      postalCode,
-      street,
+      country: null, // Reverse geocoding can be added here if needed
+      city: null,
+      state: null,
+      postalCode: null,
+      street: null,
       displaySrc,
     };
   } catch (error) {

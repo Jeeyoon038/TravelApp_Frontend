@@ -1,12 +1,20 @@
-import { Box, Button, Flex, Text, Modal, ModalOverlay, ModalContent, 
-  ModalHeader, ModalBody, ModalCloseButton, useDisclosure, 
-  Icon, useToast} from "@chakra-ui/react";
-import GoogleProfile from "./GoogleProfile";
-import ProfileImage from "./ProfileImage";
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { UserProfile } from "./ProfileImage";
 import { AddIcon } from "@chakra-ui/icons";
+import {
+  Box, Button, Flex,
+  Icon,
+  Modal,
+  ModalBody, ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Text,
+  useDisclosure,
+  useToast
+} from "@chakra-ui/react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import GoogleProfile from "./GoogleProfile";
+import ProfileImage, { UserProfile } from "./ProfileImage";
 
 interface HomeHeaderProps {
   onCreateTrip: () => void;
@@ -38,7 +46,7 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      //const token = localStorage.getItem('access_token');
 
       // Close modal first
       onClose();
@@ -50,13 +58,13 @@ export default function HomeHeader({ onCreateTrip }: HomeHeaderProps) {
       setUserData(null);
 
       // Revoke Google token if available
-      if (token && window.google?.accounts?.oauth2?.revoke) {
-        try {
-          await window.google.accounts.oauth2.revoke(token);
-        } catch (revokeError) {
-          console.error('Error revoking token:', revokeError);
-        }
-      }
+     // if (token && window.google?.accounts?.oauth2?.revoke) {
+       // try {
+         // await window.google.accounts.oauth2.revoke(token);
+        //} catch (revokeError) {
+          //console.error('Error revoking token:', revokeError);
+       // }
+      //}
 
       // Show success message
       toast({

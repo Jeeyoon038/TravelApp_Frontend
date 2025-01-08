@@ -14,9 +14,8 @@ import BottomTabBar from "../components/BottomTabBar";
 import GroupStorySection from "../components/GroupStorySection";
 import HomeHeader from "../components/HomeHeader";
 import NewTripModal from "../components/NewTripModal";
-import sendTripToBackend from "../utils/tripUploader"; // Ensure the correct path and filename
-
 import { Group } from "../types/group";
+
 
 // Define API_BASE_URL correctly
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -25,6 +24,12 @@ if (!apiUrl) {
 }
 
 const API_BASE_URL = apiUrl ? (apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl) : 'http://localhost:3000';
+
+interface TripCreationResponse {
+  message?: string;
+  // Add other properties as needed
+}
+
 
 export default function Home() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -69,12 +74,13 @@ export default function Home() {
       }
     } catch (error: any) {
       let errorMessage = "Failed to fetch groups";
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || error.message;
-        if (error.code === 'ERR_NETWORK') {
-          errorMessage = 'Unable to connect to the server. Please check if the server is running.';
-        }
-      }
+      //if (axios.isAxiosError(error)) {
+        //errorMessage = error.response?.data?.message || error.message;
+        //if (error.code === 'ERR_NETWORK') {
+          //errorMessage = 'Unable to connect to the server. Please check if the server is running.';
+        //}
+      //}
+      console.error('Error fetching groups:', error);
       toast({
         title: "Error fetching groups",
         description: errorMessage,
@@ -120,8 +126,10 @@ export default function Home() {
         created_by: googleId,
       };
 
+
+
       // Send trip creation request to backend
-      const response = await axios.post(`${API_BASE_URL}/trips`, tripCreationData, {
+      const response = await axios.post<TripCreationResponse>(`${API_BASE_URL}/trips`, tripCreationData, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`, // Include token if required
@@ -145,9 +153,9 @@ export default function Home() {
       console.error('Error creating trip:', error);
       
       let errorMessage = "An unexpected error occurred";
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || error.message;
-      }
+      //if (axios.isAxiosError(error)) {
+        //errorMessage = error.response?.data?.message || error.message;
+      //}
 
       toast({
         title: "Trip Creation Error",

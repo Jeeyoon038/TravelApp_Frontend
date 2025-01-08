@@ -33,8 +33,8 @@ export function getImageLocation(imageFile: ExifImage): Promise<Coordinates | nu
         const data = e.target.result;
 
         // Use EXIF.getData to parse EXIF information from the image
-        EXIF.getData(data,  () => {
-          const exifData = EXIF.getAllTags(this as any); // 'this' refers to the image element
+        EXIF.getData(data,  function() {
+          const exifData = EXIF.getAllTags(data); // Use the image data directly
           console.log("EXIF Data:", exifData); // Log EXIF data for debugging
 
           // Check if GPSLatitude and GPSLongitude are available in the EXIF data

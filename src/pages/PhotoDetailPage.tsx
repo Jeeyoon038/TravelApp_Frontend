@@ -35,15 +35,15 @@ export default function PhotoDetailPage() {
         setCreator((tripResponse.data as { created_by: string }).created_by);
 
         // Fetch diaries
-        const diariesResponse = await axios.get(
-          `${apiUrl}/trips/${trip_id}/diaries`,
-          {
-            params: {
-              image_url: image_url,
-            },
-          }
-        );
-        setDiaries(diariesResponse.data);
+        //const diariesResponse = await axios.get(
+          //`${apiUrl}/trips/${trip_id}/diaries`,
+          //{
+            //params: {
+              //image_url: image_url,
+            //},
+         // }
+        //);
+        //setDiaries(diariesResponse.data);
       } catch (err: any) {
         console.error("Error fetching data:", err);
         setError("Failed to load photo information.");

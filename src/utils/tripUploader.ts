@@ -3,13 +3,13 @@
 import axios from "axios";
 
 // Define an interface for trip data to ensure type safety
-interface TripData {
-  groupId: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  createdBy: string; // Google ID of the user creating the trip
-}
+//interface TripData {
+  //groupId: string;
+  //title: string;
+  //startDate: string;
+  //endDate: string;
+  //createdBy: string; // Google ID of the user creating the trip
+//}
 
 const sendTripToBackend = async (tripData: { groupId: string; title: string; startDate: string; endDate: string; createdBy: string; }) => {
   try {

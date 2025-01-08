@@ -19,14 +19,14 @@ import {
   useToast,
   VStack,
 } from "@chakra-ui/react";
+import axios from 'axios';
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { FaTimes, FaUpload } from "react-icons/fa";
-import { Group } from "../types/group";
-import { extractMetadataFromUrls } from "../utils/exifMetadataExtractor";
-import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { Group } from "../types/group";
 import { ImageData } from "../types/imagedata";
+import { extractMetadataFromUrls } from "../utils/exifMetadataExtractor";
 
 // API Configuration
 const API_CONFIG = {
