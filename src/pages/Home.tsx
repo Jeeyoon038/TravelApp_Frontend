@@ -101,7 +101,7 @@ export default function Home() {
       setTimeout(() => {
         setShowWelcomeAnimation(false);
         localStorage.setItem("first_login", "false");
-      }, 3000); // Set duration for animation (e.g., 3 seconds)
+      }, 8600); // Set duration for animation (e.g., 3 seconds)
     }
     fetchGroups();
   }, []);
@@ -146,13 +146,13 @@ export default function Home() {
       });
 
       if (response.status === 201 || response.status === 200) {
-        toast({
-          title: "Trip Created",
-          description: "Your trip has been created successfully.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
+        //toast({
+          //title: "Trip Created",
+          //description: "Your trip has been created successfully.",
+          //status: "success",
+          //duration: 3000,
+          //isClosable: true,
+        //});
         fetchGroups(); // Refresh the trips list
         onClose(); // Close the modal
       } else {
@@ -166,13 +166,13 @@ export default function Home() {
         //errorMessage = error.response?.data?.message || error.message;
       //}
 
-      toast({
-        title: "Trip Creation Error",
-        description: errorMessage,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+      //toast({
+        //title: "Trip Creation Error",
+        //description: errorMessage,
+        //status: "error",
+        //duration: 5000,
+        //isClosable: true,
+      //});
     }
   };
 
@@ -211,7 +211,7 @@ export default function Home() {
           <img
             src="/animations/travelmonster.gif"
             alt="Welcome Animation"
-            style={{ maxWidth: "80%", maxHeight: "80%" }}
+            style={{ maxWidth: "100%", maxHeight: "100%" }}
           />
         </Flex>
       )}

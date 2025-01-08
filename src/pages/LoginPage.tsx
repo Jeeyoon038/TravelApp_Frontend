@@ -1,5 +1,5 @@
 // ./pages/LoginPage.tsx
-import { Box, Button, Center, Image, Text, useToast } from "@chakra-ui/react";
+import { Box, Button, Center, Image, useToast } from "@chakra-ui/react";
 import { TokenResponse, useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useState } from 'react';
@@ -95,13 +95,13 @@ export default function LoginPage() {
         }
 
         // Show success toast
-        toast({
-          title: "로그인 성공",
-          description: "환영합니다!",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
+        //toast({
+          //title: "로그인 성공",
+          //description: "환영합니다!",
+          //status: "success",
+          //duration: 3000,
+          //isClosable: true,
+        //});
 
         // Navigate to Home page
         navigate('/home', { replace: true });
@@ -137,22 +137,23 @@ export default function LoginPage() {
   return (
     <Center h="100vh" bgGradient="linear(to-r, blue.200, purple.200)">
       <Box bg="white" p={8} rounded="xl" shadow="2xl" textAlign="center" minW="300px">
-        <Image src="/logo.png" alt="Logo" mx="auto" mb={6} boxSize="100px" />
-        <Text fontSize="2xl" fontWeight="bold" mb={6}>
-          Welcome to Our App
-        </Text>
+        <Image src="/logo.png" alt="Logo" mx="auto" mb={6} maxHeight="70px"
+        maxWidth="250px" />
+
         <Button
           onClick={() => {
             console.log('Login button clicked');
             login();
           }}
-          colorScheme="blue"
+          colorScheme="white"
+          boxShadow={ "0px 4px 4px rgba(0, 0, 0, 0.10)"}
           size="lg"
           leftIcon={
             <Image src="/google-icon.png" alt="Google" boxSize="20px" />
           }
           isLoading={isLoading}
           loadingText="로그인 중"
+          textColor={"gray.500"}
         >
           Sign in with Google
         </Button>
