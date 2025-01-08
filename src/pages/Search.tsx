@@ -22,29 +22,76 @@ const MotionText = motion(Text);
 
 export default function Search() {
   const posts = [
+
     {
-      profileImage: "/images/image2.jpg",
-      username: "jeeyoon38",
-      location: "아테네",
+      profileImage: "/images/프로필3.jpg",
+      username: "Toni Kroos",
+      location: "마요르카",
       images: [
-        "/images/image2.jpg",
-        "/images/image3.jpg",
-        "/images/image2.jpg",
-        "/images/image3.jpg",
+        "/images/대전1.jpg", 
+        "/images/대전2.jpg",
+        "/images/대전3.jpg",
+        "/images/대전4.jpg",
+        "/images/대전5.jpg",
+        "/images/대전6.jpg",
+
       ],
     },
     {
-      profileImage: "/images/image2.jpg",
-      username: "katie",
-      location: "뉴욕",
-      images: ["/images/image5.jpg", "/images/image6.jpg"],
+      profileImage: "/images/프로필1.jpg",
+      username: "Blackpink",
+      location: "부다페스트",
+      images: [
+        "/images/부다페스트1.jpg",
+        "/images/부다페스트2.jpg",
+        "/images/부다페스트3.jpg",
+        "/images/부다페스트4.jpg",
+        "/images/부다페스트5.jpg",
+        "/images/부다페스트6.jpg",
+        "/images/부다페스트7.jpg",
+        "/images/부다페스트8.jpg",
+       
+      ],
     },
     {
-      profileImage: "/images/image2.jpg",
-      username: "하하하",
-      location: "서울",
-      images: ["/images/image5.jpg", "/images/image6.jpg"],
+      profileImage: "/images/프로필4.jpg",
+      username: "Katie",
+      location: "비엔나",
+      images: [
+        "/images/오스트리아1.jpg", 
+        "/images/오스트리아2.jpg",
+        "/images/오스트리아3.jpg",
+        "/images/오스트리아4.jpg",
+        "/images/오스트리아5.jpg",
+      ],
     },
+
+    {
+      profileImage: "/images/프로필5.jpg",
+      username: "이도현",
+      location: "이탈리아 바리",
+      images: [
+        "/images/바리1.jpg", 
+        "/images/바리2.jpg",
+        "/images/바리3.jpg",
+        "/images/바리4.jpg",
+      ],
+    },
+
+    {
+      profileImage: "/images/프로필6.jpg",
+      username: "차은우",
+      location: "마요르카",
+      images: [
+        "/images/런던1.jpg", 
+        "/images/런던2.jpg",
+        "/images/런던3.jpg",
+        "/images/런던4.jpg",
+        "/images/런던5.jpg",
+        "/images/런던6.jpg",
+      ],
+    },
+
   ];
 
   const [searchQuery, setSearchQuery] = useState("");
