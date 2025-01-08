@@ -426,6 +426,12 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
                     ? group.start_date.toDateString()
                     : group.start_date}
                 </Text>
+                {/* Group End Date */}
+                <Text fontSize="sm" color="white" opacity={0.9} mb={3}>
+            {   group.end_date instanceof Date
+                ? group.end_date.toDateString()
+              : group.end_date}
+            </Text>
 
                 {/* Buttons for Image Upload and Member Invitation */}
                 <Flex alignItems="center" gap={3}>
@@ -498,6 +504,12 @@ export default function GroupDetail({ group, isHeaderCollapsed }: GroupDetailPro
             {group.title}
           </Text>
 
+          {/* Group Start Date */}
+          <Text fontSize={12} color="gray.600">
+                  {group.start_date instanceof Date
+                    ? group.start_date.toDateString()
+                    : group.start_date}
+                </Text>
           {/* Group End Date */}
           <Text fontSize={12} color="gray.600">
             {group.end_date instanceof Date

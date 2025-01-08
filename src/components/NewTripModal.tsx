@@ -26,7 +26,9 @@ import { FaTimes, FaUpload } from "react-icons/fa";
 import { v4 as uuidv4 } from 'uuid';
 import { Group } from "../types/group";
 import { ImageData } from "../types/imagedata";
-import { extractMetadataFromUrls } from "../utils/exifMetadataExtractor";
+import { extractMetadataFromUrls } from "../utils/ExifMetadataExtractor";
+import { processFiles } from "../utils/heicToJpg"; // Added import
+
 
 // API Configuration
 const API_CONFIG = {
@@ -81,7 +83,18 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
 
   const onDrop = async (acceptedFiles: File[]) => {
     try {
-      setSelectedFiles(acceptedFiles);
+      setIsProcessingFiles(true);
+    
+    // Process files (convert HEIC to JPG and extract metadata)
+    const processedImages = await processFiles(acceptedFiles);
+    setIsProcessingFiles(false);
+    
+  
+    // Extract only the processed files (without metadata)
+    const processedFiles = processedImages.map(item => item.file);
+
+
+      setSelectedFiles(processedFiles);
     } catch (error: any) {
       toast({
         title: "파일 처리 오류",
@@ -92,6 +105,9 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
       });
     }
   };
+
+  const [isProcessingFiles, setIsProcessingFiles] = useState<boolean>(false);
+
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -451,6 +467,21 @@ const NewTripModal: React.FC<NewTripModalProps> = ({
                       </>
                     )}
                   </Box>
+
+                  {/* 추가된 로딩바 */}
+                  {isProcessingFiles && (
+                    <Box mt={4}>
+                      <Progress
+                        value={50} // 현재 진행 상황 값 (예: 임의로 50 설정)
+                        size="xs"
+                        colorScheme="blue"
+                        isIndeterminate // 처리 중임을 나타내는 애니메이션
+                      />
+                      <Text mt={2} fontSize="sm" color="gray.600" textAlign="center">
+                        이미지를 처리 중입니다...
+                      </Text>
+                    </Box>
+                  )}
                   {selectedFiles.length > 0 && (
                     <Flex mt={4} flexWrap="wrap">
                       {selectedFiles.map((file, index) => {
