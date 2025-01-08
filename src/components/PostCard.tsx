@@ -1,7 +1,6 @@
 import { Box, Image as ChakraImage, Flex, Text } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { FC, useEffect, useState } from "react";
-import { useSwipeable } from "react-swipeable"; // 스와이프 이벤트 감지 라이브러리
 import { getPhotoMetadata, PhotoMetadata } from "../utils/getPhotoMetadata";
 import { MapComponent } from "./MapComponent";
 
@@ -48,13 +47,6 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images 
       ? { lat: imageMetadata.latitude, lng: imageMetadata.longitude }
       : undefined;
 
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => console.log("Swiped left"),
-    onSwipedRight: () => console.log("Swiped right"),
-    preventScrollOnSwipe: true,
-    trackTouch: true,
-  });
-
   return (
     <MotionBox
       bg="white"
@@ -63,7 +55,6 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images 
       p={4}
       cursor="pointer"
       whileHover={{ scale: 1.02, boxShadow: "lg" }}
-      whileTap={{ scale: 0.98 }}
     >
       <Flex alignItems="center" mb={4}>
         <ChakraImage src={profileImage} alt={username} boxSize="50px" borderRadius="full" mr={3} />
@@ -86,7 +77,6 @@ const PostCard: FC<PostCardProps> = ({ profileImage, username, location, images 
           WebkitOverflowScrolling: "touch",
           "&::-webkit-scrollbar": { display: "none" },
         }}
-        {...swipeHandlers} // 스와이프 이벤트 핸들러 추가
       >
         {images.map((image, index) => (
           <Box
